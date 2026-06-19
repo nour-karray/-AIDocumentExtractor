@@ -1,0 +1,26 @@
+{
+  "file_name": "tmpn4u39_bc.jpg",
+  "reference": "74726 880 0",
+  "montant_a_payer": "649,000",
+  "date_limite_paiement": "2025-06-23",
+  "periode_du": "2025-03-27",
+  "periode_au": "2025-05-02",
+  "coupon_reference_raw": "00000657470701",
+  "coupon_montant": null,
+  "confidence_note": "high",
+  "extraction_source": "ocr",
+  "warnings": [],
+  "extraction_quality": 1.0,
+  "_meta": {
+    "saved_at": "2026-06-07T21:46:52.447330+00:00",
+    "source_filename": "steg7.jpg",
+    "kind": "steg_ocr",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "steg_invoice",
+    "source_mime": "image/jpeg",
+    "source_size": 333702,
+    "stored_in_database": true,
+    "source_file_relative": "steg_ocr\\20260607T214652Z_steg7.jpg"
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "document_type": "medical_lab_report",
+  "lab_info": {
+    "lab_name": "9 12, Rue des Lilas - 1002 El Manar",
+    "doctor_name": "Amine Charfi Dossier"
+  },
+  "patient_info": {
+    "patient_name": "Accréditation fictive : BN-LAB-2026-01",
+    "date_of_birth": "1994-03-14"
+  },
+  "document_metadata": {
+    "dossier_number": "BN-260609-184 Adresse",
+    "sample_date": "2026-06-09",
+    "report_date": "2026-06-09",
+    "source_file": "C:\\Users\\User\\AppData\\Local\\Temp\\tmpmckeggay.png",
+    "document_type": "medical_lab_report"
+  },
+  "tests": [
+    {
+      "raw_test_name": "TSH",
+      "normalized_name": "tsh",
+      "category": "hormonology",
+      "value": 2.14,
+      "unit": "uIU/mL",
+      "status": "unknown",
+      "raw_line": "TSH ultrasehsible  2.14",
+      "confidence": 0.7
+    },
+    {
+      "raw_test_name": "Hemoglobine",
+      "normalized_name": "hemoglobin",
+      "category": "hematology",
+      "value": 12.0,
+      "unit": "g%",
+      "status": "unknown",
+      "raw_line": "12.0 - 16.0  Hémoglobine",
+      "confidence": 0.7
+    },
+    {
+      "raw_test_name": "glycemie",
+      "normalized_name": "glucose",
+      "category": "biochemistry",
+      "value": 0.92,
+      "unit": "g/l",
+      "status": "unknown",
+      "raw_line": "UNITÉ RÉSULTAT EXAMEN VALEURS Glycémie à jeun 0.92 g/t Urée \\ 4 0.28, g/L",
+      "confidence": 0.7
+    },
+    {
+      "raw_test_name": "uree",
+      "normalized_name": "urea",
+      "category": "biochemistry",
+      "value": 4.0,
+      "unit": "g/l",
+      "status": "unknown",
+      "raw_line": "Glycémie à jeun 0.92 g/t Urée \\ 4 0.28, g/L mg/L 87 \\e Créatinine",
+      "confidence": 0.7
+    },
+    {
+      "raw_test_name": "creatinine",
+      "normalized_name": "creatinine",
+      "category": "biochemistry",
+      "value": 87.0,
+      "reference_range": {
+        "min": 6.0,
+        "max": 11.0,
+        "raw_text": "6.0-11.0"
+      },
+      "status": "high",
+      "raw_line": "Urée \\ 4 0.28, g/L mg/L 87 \\e Créatinine 667 es — = Cholestérol 178 g/L total",
+      "confidence": 0.7
+    },
+    {
+      "raw_test_name": "cholesterol",
+      "normalized_name": "unknown",
+      "category": "biochemistry",
+      "value": 178.0,
+      "unit": "g/l",
+      "status": "unknown",
+      "raw_line": "mg/L 87 \\e Créatinine 667 es — = Cholestérol 178 g/L total muI/L TSH ultrasehsible 2.14",
+      "confidence": 0.7
+    }
+  ],
+  "warnings": [
+    {
+      "code": "MEDICAL_OCR_VARIANT_SELECTED",
+      "message": "Variante OCR retenue: original:clahe900:psm11 (score 159.7, 12 tentative(s))."
+    },
+    {
+      "code": "DOCUMENT_PREPROCESSING_APPLIED",
+      "message": "Image redressee et amelioree avant OCR medical rapide.",
+      "context": "{'enabled': True, 'steps': ['format_and_size_validation', 'exif_orientation_correction', 'contrast_and_sharpness_enhancement'], 'input_name': 'tmpmckeggay.png', 'input_extension': '.png', 'input_size_bytes': 1943723, 'original_width': 1055, 'original_height': 1491, 'perspective_correction': 'not_detected', 'auto_orientation_scores': {0: 1335.5, 90: 46.0, 180: 934.25, 270: 38.0}, 'auto_orientation_degrees': 0, 'hough_deskew_angle': 0.0, 'deskew_angle': 0.0, 'output_width': 1055, 'output_height': 1491, 'output_format': 'png', 'output_size_bytes': 2636635}"
+    },
+    {
+      "code": "FAST_MEDICAL_OCR",
+      "message": "Extraction rapide utilisee pour eviter le blocage du pipeline local sur image medicale (original:clahe900:psm11).",
+      "context": "C:\\Users\\User\\AppData\\Local\\Temp\\tmpmckeggay.png"
+    },
+    {
+      "code": "AUTO_FAST_OCR_FALLBACK",
+      "message": "Analyse medicale image: retour OCR structure rapide utilise pour eviter une attente longue de Qwen/Ollama."
+    }
+  ],
+  "raw_text": "DOCUMENT FICTIF — POUR TEST OCR / DATASET\n\nNON OFFICIEL\n\nLaboratoire\n\n9 12, Rue des Lilas - 1002 El Manar\n\nTunis - Tunisie\n\nA\n\nBioNova\n\n& 4216) 71 123 456\n\nL'expertise au service de votre santé\n\n©& contact@laboratoire-bionova.tn\n\n© wwwlaboratoire-bionova.tn\n\nCOMPTE-RENDU D'ANALYSES\n\nNom :\n\nMme Ines Ben Youssef\n\nDate de prélèvement :\n\n09/06/2026\n\nDate de naissance :\n\n14/03/1994\n\nDate de réception :\n\n09/06/2026\n\nSexe :\n\nFéminin\n\nDate d'édition :\n\n10/06/2026,\n\nMédecin prescripteur :\n\nDr. Amine Charfi\n\nDossier :\n\nBN-260609-184\n\nAdresse :\n\nPrélévement :\n\n45, Avenue des Orangers\n\nSang veineux\n\n2080 Ariana - Tunisie\n\nEXAMEN\n\nRESULTAT\n\nUNI\n\nVALEURS DE RI\n\nENCE\n\n0.92\n\n0.70 - 1.10\n\nGlycémie à jeun\n\ngl\n\nL\n\neG\n\nUrée\n\n0.28,\n\ngil\n\n0.15 - 0.45\n\ndea!\n\nak Ke\n\nBEAM\n\nCréatinine\n\n87\n\nmg/L\n\n6.0- 11.0\n\n<\n\n_¢¥\n\nQué\n\n=\n\nCholestérol total\n\n1,78\n\ng/L\n\n< 2.00\n\nÀ\n\nBais\n\niS\n\nTSH ultrasehsible\n\n2.14\n\nmUl/L\n\n0.27 - 4.20\n\nAM ies\n\n13.6\n\n12.0 - 16.0\n\nHémoglobine\n\nsia\n\noe\n\nCOMMENTAIRES :\n\nRésultats à interpréter en fonction du contexte clinique et des antécédents du patient.\n\nAccréditation fictive : BN-LAB-2026-01\n\nMéthodes utilisées conformes aux procédures internes du laboratoire.\n\nSignature :\n\nValidé biologiquement par :\n\nDr. Salma Hached\n\nfe D\n\n5\n\nBiologiste médical\n\nDr. Salma Hached\n\nNuméro d'inscription : 19-BM-5123\n\nBiologiste médical\n\nCachet du laboratoire\n\nNG\n\nwo\n\n+ Ce compte-rendu ne concerne que l'échantillon soumis à analyse.\n\n+ La reproduction partielle de ce document n’est autorisée qu'avec l'accord du laboratoire.\n\nMerci de votre confiance.\n",
+  "extraction_source": "hybrid_local_fast_medical_ocr",
+  "local_pipeline": {
+    "architecture": "Pretraitement -> OCR medical rapide -> JSON structure",
+    "content_source": "medical_fast_ocr",
+    "qwen_used": false,
+    "reason": "Retour rapide pour les images medicales afin d'eviter une attente longue devant l'utilisateur."
+  },
+  "_meta": {
+    "saved_at": "2026-06-09T22:29:09.344415+00:00",
+    "source_filename": "ChatGPT Image 9 juin 2026, 23_27_00 (1) (1).png",
+    "kind": "medical_local",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "medical_lab_report",
+    "source_mime": "image/png",
+    "source_size": 1943723,
+    "stored_in_database": true,
+    "source_file_relative": "medical_local\\20260609T222909Z_ChatGPT_Image_9_juin_2026_23_27_00_1_1.png",
+    "trashed_at": "2026-06-09T22:29:20.522789+00:00",
+    "original_relative_path": "medical_local\\20260609T222909Z_ChatGPT_Image_9_juin_2026_23_27_00_1_1.json"
+  }
+}

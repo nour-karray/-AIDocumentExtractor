@@ -5,6 +5,7 @@ pytesseract
 pdf2image
 Pillow
 pypdf
+PyMuPDF
 reportlab
 pydantic
 python-dateutil
@@ -20,3 +21,6 @@ google-genai
 fastapi
 uvicorn
 python-multipart
+docling
+paddleocr
+paddlepaddle

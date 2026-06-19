@@ -1,0 +1,37 @@
+{
+  "patient_name": "Patient Synth 20",
+  "doctor_name": "Dr Amina Trabelsi",
+  "date": "2026-04-02",
+  "analyses": [
+    {
+      "test_name": "Glycemie",
+      "value": "0.82",
+      "unit": "g/l"
+    },
+    {
+      "test_name": "Cholesterol total",
+      "value": "1.62",
+      "unit": "g/l"
+    },
+    {
+      "test_name": "Triglycerides",
+      "value": "0.92",
+      "unit": "g/l"
+    }
+  ],
+  "warnings": [],
+  "extraction_quality": 0.91,
+  "extraction_source": "gemini",
+  "_meta": {
+    "saved_at": "2026-06-09T18:10:20+00:00",
+    "source_filename": "analyse_synth_20.jpg",
+    "kind": "medical_gemini",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "medical_lab_report",
+    "source_mime": "image/jpeg",
+    "source_size": 177540,
+    "stored_in_database": true,
+    "source_file_relative": "medical_gemini\\20260609T181020Z_analyse_synth_20.jpg"
+  }
+}

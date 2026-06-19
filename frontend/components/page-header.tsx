@@ -18,13 +18,13 @@ export function PageHeader({
   action
 }: PageHeaderProps) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div className="max-w-4xl">
-          <h1 className="proto-title text-[28px] font-bold leading-tight tracking-tight text-[#1b2440] dark:text-white md:text-[30px]">
+          <h1 className="proto-title text-[30px] font-bold leading-tight tracking-tight text-[#111b3d] dark:text-white md:text-[34px]">
             {title}
           </h1>
-          <p className="mt-1.5 max-w-3xl text-sm leading-6 text-[#7a83a2] dark:text-[#96a1c2]">
+          <p className="mt-2 max-w-3xl text-[15px] leading-7 text-[#6f7898] dark:text-[#96a1c2]">
             {description}
           </p>
           {chips.length > 0 ? (

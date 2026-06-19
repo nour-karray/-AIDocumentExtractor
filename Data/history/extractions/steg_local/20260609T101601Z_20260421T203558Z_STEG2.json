@@ -1,0 +1,57 @@
+{
+  "document_type": "steg_invoice",
+  "reference": "215474111",
+  "numero_compteur": null,
+  "date_facture": "2022-11-04",
+  "montant_a_payer": "35,000",
+  "date_limite_paiement": "2022-11-04",
+  "periode_du": null,
+  "periode_au": null,
+  "coupon_reference_raw": "0000069215474111",
+  "coupon_montant": "35,000",
+  "confidence_note": "medium",
+  "raw_text": "{\"amount_text\": \"98\\n24\\n4619\\n5.979\\n35.000 1921\\n,\\n\", \"coupon_text\": \"20221128 20230105\\n195822625\\n000\\n\", \"date_text\": \"6\\n2\\n\\n2022.13.28 20230108\\n4\\n22625\\n\", \"due_date_text\": \"1\\n\\n2\\n\\n3\\n\\n1428\\n\\n2\\n\\n7\\n\", \"next_date_text\": \"0\\n\\n2023.0108\\n\\n72\\n\", \"invoice_date_text\": \"202211.04,31202209.060\\n\\n9\\n\\n,\\n\\n253\\n\\n3\\n\\n.\\n\", \"reference_text\": \".\\n\\n218474111\\n\\n2,\\n\\n273,\\n\", \"reference_zone_text\": \"215474111\\n2\\n273\\n\\n215474111\\n\\n2\\n\\n273\\n\\n215474111\\n2\\n273\\n\\n215474111\\n\\n2\\n\\n273\\n\\n215474111\\n2\\n273\\n\\n215474111\\n\\n2\\n\\n273\\n\", \"due_zone_text\": \"1128 2\\n\\n28\\n\\n2\\n\\n4\\n\\n1128 2\\n\\n1128\\n\\n3\\n1128 2\\n\\n28\\n\", \"coupon_ref_text\": \"0000069215474111\\n\", \"header_text\": \"INS\\n\\niat\\n\\n4\\n\\nReterence\\n\\n. c\\n\\n215474111\\n\\nel\\n\\nFacture\\n\\n559\\n\\nMEHDIMARZOUK,RESMANARETBOUHAIRABLC\\n\\nKRAM\\n\\n273ET,LACH\\n\\nFACTURESURRELEV\\n\\ne\\n\\n2022-11-04:i12022-09-\\n\\nCONSOMMATIONSERVICES\\n\\nle.\\n\\nsealat\\n\\nIndexstuatt3i\\n\\nTataal95\\n\\ntatatyDamsltgaueSOMJaaalaeot\\n\\nestos\\n\\nait\\n\\nPU.a\\n\\nQuantiteswtquat/Nbrede\\n\\nvent\\n\\n/AcoMon\"}",
+  "extraction_source": "hybrid_local_fast_steg_ocr",
+  "warnings": [
+    {
+      "code": "FAST_STEG_OCR",
+      "message": "Facture STEG image: OCR texte rapide utilise pour remplir les champs sans attendre Qwen/Ollama."
+    }
+  ],
+  "local_pipeline": {
+    "architecture": "Pretraitement -> OCR STEG specialise -> JSON structure",
+    "content_source": "steg_specialized_ocr",
+    "qwen_used": false,
+    "reason": "Retour rapide pour eviter les timeouts sur image STEG.",
+    "preprocessing": null,
+    "fallback_used": false,
+    "fallback_quality": null,
+    "docling_error": null,
+    "quick_zone_ocr_used": true,
+    "quick_zone_ocr_debug": {
+      "amount_text": "98\n24\n4619\n5.979\n35.000 1921\n,\n",
+      "coupon_text": "20221128 20230105\n195822625\n000\n",
+      "date_text": "6\n2\n\n2022.13.28 20230108\n4\n22625\n",
+      "due_date_text": "1\n\n2\n\n3\n\n1428\n\n2\n\n7\n",
+      "next_date_text": "0\n\n2023.0108\n\n72\n",
+      "invoice_date_text": "202211.04,31202209.060\n\n9\n\n,\n\n253\n\n3\n\n.\n",
+      "reference_text": ".\n\n218474111\n\n2,\n\n273,\n",
+      "reference_zone_text": "215474111\n2\n273\n\n215474111\n\n2\n\n273\n\n215474111\n2\n273\n\n215474111\n\n2\n\n273\n\n215474111\n2\n273\n\n215474111\n\n2\n\n273\n",
+      "due_zone_text": "1128 2\n\n28\n\n2\n\n4\n\n1128 2\n\n1128\n\n3\n1128 2\n\n28\n",
+      "coupon_ref_text": "0000069215474111\n",
+      "header_text": "INS\n\niat\n\n4\n\nReterence\n\n. c\n\n215474111\n\nel\n\nFacture\n\n559\n\nMEHDIMARZOUK,RESMANARETBOUHAIRABLC\n\nKRAM\n\n273ET,LACH\n\nFACTURESURRELEV\n\ne\n\n2022-11-04:i12022-09-\n\nCONSOMMATIONSERVICES\n\nle.\n\nsealat\n\nIndexstuatt3i\n\nTataal95\n\ntatatyDamsltgaueSOMJaaalaeot\n\nestos\n\nait\n\nPU.a\n\nQuantiteswtquat/Nbrede\n\nvent\n\n/AcoMon"
+    }
+  },
+  "_meta": {
+    "saved_at": "2026-06-09T10:16:01.360849+00:00",
+    "source_filename": "20260421T203558Z_STEG2.png",
+    "kind": "steg_local",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "steg_invoice",
+    "source_mime": "image/png",
+    "source_size": 455954,
+    "stored_in_database": true,
+    "source_file_relative": "steg_local\\20260609T101601Z_20260421T203558Z_STEG2.png"
+  }
+}

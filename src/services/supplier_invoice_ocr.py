@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import re
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +13,7 @@ import numpy as np
 import pytesseract
 
 from src.extraction.steg_invoice_extractor import configure_tesseract, read_image
+from src.services.document_preprocessing import preprocess_document
 from src.utils.arabic_invoice_utils import clean_arabic_ocr_text, normalize_numeric_digits, rtl_script_ratio
 
 
@@ -194,7 +196,12 @@ def load_gray_for_invoice_ocr(path: Path) -> np.ndarray | None:
         g = _pil_gray_from_pdf_first_page(path)
         return g
     try:
-        img = read_image(path)
+        with tempfile.TemporaryDirectory() as prep_dir:
+            try:
+                preprocessed = preprocess_document(path, Path(prep_dir))
+                img = read_image(preprocessed.path)
+            except Exception:
+                img = read_image(path)
         return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     except Exception:
         return None

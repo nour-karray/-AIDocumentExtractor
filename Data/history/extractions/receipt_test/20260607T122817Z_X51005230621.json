@@ -1,0 +1,29 @@
+{
+  "document_type": "receipt",
+  "store_name": "SIN LIANHAP SDN BHD",
+  "date": "05/02/2018",
+  "time": "",
+  "ticket_number": "",
+  "currency": "",
+  "items": [],
+  "total": "7.30",
+  "payment_method": "",
+  "address": "LOT 13, JALAN IPOH, KG BATU 30, ULU YAM LAMA 44300 BTG KALI, SELANGOR.",
+  "raw_text": "SIN LIANHAP SDN BHD\nLOT 13, JALAN\nSIN LIANHAP SDN BHD\nLOT 13, JALAN IPOH,\nKG BATU 30 , ULU YAM LAMA\n44300 BTG KALI, SELANGOR.\nTEL:03-60752222(HUNTING LINE) FAX: 03-60752572\n(COMPANY REG NO: 284922-D)\n(GST REG NO: 001610833920)\nTAX INVOICE\nCASH CUSTOMER\nINVOLCE NO.:\n:H0003939\nDATE:\n:05/02/2018\nCASHIER#:\n:\nRM\nCODE\nPPD 4MM DENLIME\n1.887\nSR\n1.000PC\n2.00\n6023# GARDEN\n5.000\nSR\n1.000 PC\n5.30\nSUBTOTAL :\n7.30\nTOTAL SALES EXCLUDING GST :\n6.69\nTOTAL SALES INCLUSLVE OF GST:\n7.30\nROUNDING ADJUSTMENT :\n0.00\nPAYMENT :\n7.30\nCHANGE DUE :\n0.00\nTOTAL ITEM(S) :\nGST SUMMARY\nSR\nAMONUT\n6.89\nTAX\n0.41\nTHANK YOU\nPLEASE COME AGAIN\nX\nX\n2\n@6",
+  "dataset": "sroie2019",
+  "dataset_split": "test",
+  "extraction_source": "sroie_ground_truth",
+  "extraction_quality": 100.0,
+  "_meta": {
+    "saved_at": "2026-06-07T12:28:17.165906+00:00",
+    "source_filename": "X51005230621.jpg",
+    "kind": "receipt_test",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "receipt",
+    "source_mime": "image/jpeg",
+    "source_size": 474319,
+    "stored_in_database": true,
+    "source_file_relative": "receipt_test\\20260607T122817Z_X51005230621.jpg"
+  }
+}

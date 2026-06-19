@@ -25,6 +25,9 @@ class ReferenceRange(BaseModel):
 class DocumentMetadata(BaseModel):
     exam_number: Optional[str] = None
     dossier_number: Optional[str] = None
+    received_date: Optional[str] = None
+    edited_date: Optional[str] = None
+    request_date: Optional[str] = None
     sample_date: Optional[str] = None
     report_date: Optional[str] = None
     page_number: Optional[str] = None

@@ -1,0 +1,58 @@
+{
+  "document_type": "medical_lab_report",
+  "lab_info": {
+    "lab_name": "|. Ancienne Assistante Hospiälo Univershaire pee ae “Page |",
+    "doctor_name": null
+  },
+  "patient_info": {
+    "patient_name": "Gaddour Imtinene Hadrish F",
+    "patient_id": null,
+    "date_of_birth": null,
+    "sex": null
+  },
+  "document_metadata": {
+    "exam_number": null,
+    "dossier_number": "cienne Assistante Hospi",
+    "received_date": null,
+    "edited_date": null,
+    "request_date": null,
+    "sample_date": "2017-01-12",
+    "report_date": "2017-01-12",
+    "page_number": null,
+    "organization": null,
+    "source_file": "C:\\Users\\User\\AppData\\Local\\Temp\\tmpqdjvtrfi.jpg",
+    "document_type": "medical_lab_report"
+  },
+  "tests": [],
+  "warnings": [
+    {
+      "code": "FAST_MEDICAL_OCR",
+      "message": "Extraction rapide utilisee pour eviter le blocage du pipeline local sur image medicale.",
+      "context": "C:\\Users\\User\\AppData\\Local\\Temp\\tmpqdjvtrfi.jpg"
+    },
+    {
+      "code": "AUTO_FAST_OCR_FALLBACK",
+      "message": "Analyse medicale image: retour OCR structure rapide utilise pour eviter une attente longue de Qwen/Ollama."
+    }
+  ],
+  "raw_text": "|. Ancienne Assistante Hospiälo Univershaire pee ae “Page |\nF ——\" mp\" cu roe 7\nPE ith Demandéle ; 12/01/2017\nEu. [RS dé, © Beamer NÉ : 170112/0196,\nqe RE Mme GADDOUR IMTINENE HADRISH\nF + : ‘ @rganismé: CNAM TIERS PAY/ 11835063/00,\nGLYCEMIE A JEUN. 2 ++ @ 09818 | 097 140009 N:MESIOENNNS 5\nCe mn a = at\n| PX sa]\n| iA .\n1 F ~ ’ r =~ |\n\\ Fs >  . . Un À |\n| : | ; A =) | . a = 1 be do\n| oS AE Sy\n| fa & fit | ss\n|\nf fe. af È , +\nI JT 75h\noe es hate Ok Lata | y\n6450 te der”) UNE |\n- A tla? ea AW\n",
+  "extraction_source": "hybrid_local_fast_medical_ocr",
+  "local_pipeline": {
+    "architecture": "Pretraitement -> OCR medical rapide -> JSON structure",
+    "content_source": "medical_fast_ocr",
+    "qwen_used": false,
+    "reason": "Retour rapide pour les images medicales afin d'eviter une attente longue devant l'utilisateur."
+  },
+  "_meta": {
+    "saved_at": "2026-06-07T19:50:03.245946+00:00",
+    "source_filename": "analyse3.jpg",
+    "kind": "medical_local",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "medical_lab_report",
+    "source_mime": "image/jpeg",
+    "source_size": 125072,
+    "stored_in_database": true,
+    "source_file_relative": "medical_local\\20260607T195003Z_analyse3.jpg"
+  }
+}

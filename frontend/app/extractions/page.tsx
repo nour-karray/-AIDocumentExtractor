@@ -1,6 +1,13 @@
 "use client";
 
-import { Check, CloudUpload, FileStack, Info, LoaderCircle, Plus } from "lucide-react";
+import {
+  Check,
+  CloudUpload,
+  FileStack,
+  Info,
+  LoaderCircle,
+  Plus
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -10,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { fetchMeta, uploadExtractions } from "@/lib/api";
 import {
   readStoredValue,
@@ -18,58 +24,56 @@ import {
   writeStoredValue,
 } from "@/lib/storage";
 import type { ExtractionBatchPayload, MetaPayload } from "@/lib/types";
+import type { DragEvent } from "react";
+
+const localConfig = {
+  label: "Pipeline IA local",
+  provider: "Ollama",
+  defaultHost: "http://127.0.0.1:11434",
+  defaultModel: "qwen2.5:7b-instruct",
+} as const;
+
+const fallbackMethods = [
+  { value: "local", label: "Pipeline IA local (Docling + PaddleOCR + Qwen2.5)" },
+] as const;
+
+const ACCEPTED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "tif", "tiff", "pdf"]);
 
 const modeVisuals: Record<string, { title: string; hint: string }> = {
   auto: { title: "Auto", hint: "Detection intelligente" },
   medical: { title: "Analyse medicale", hint: "Labo & comptes rendus" },
   steg: { title: "Facture STEG", hint: "Electricite & facture" },
   supplier: { title: "Facture fournisseur", hint: "B2B generique" },
-  receipt: { title: "Ticket de caisse", hint: "Recu & ticket" }
+  receipt: { title: "Ticket de caisse", hint: "Recu & ticket" },
 };
 
-const aiProviders = {
-  gemini: {
-    label: "Gemini 2.5 Flash",
-    provider: "Google",
-    keyEnv: "GEMINI_API_KEY",
-    defaultModel: "gemini-2.5-flash",
-    supported: true,
-    note: "Supporte l'extraction reelle dans cette version.",
-  },
-  openai: {
-    label: "GPT-4o",
-    provider: "OpenAI",
-    keyEnv: "OPENAI_API_KEY",
-    defaultModel: "gpt-4o",
-    supported: false,
-    note: "Interface prete, integration backend bientot.",
-  },
-  anthropic: {
-    label: "Claude 3.5 Sonnet",
-    provider: "Anthropic",
-    keyEnv: "ANTHROPIC_API_KEY",
-    defaultModel: "claude-3-5-sonnet-latest",
-    supported: false,
-    note: "Interface prete, integration backend bientot.",
-  },
-} as const;
-
-type AiProvider = keyof typeof aiProviders;
+function isSupportedFile(file: File) {
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return ACCEPTED_EXTENSIONS.has(extension) || file.type.startsWith("image/") || file.type === "application/pdf";
+}
 
 function resolveAllowedMethods(meta: MetaPayload) {
   return meta.methods;
 }
 
 function resolveInitialMethod(meta: MetaPayload) {
-  const storedProvider = readStoredValue(storageKeys.aiProvider, "gemini");
-  if (storedProvider === "openai" || storedProvider === "anthropic") {
-    return "gemini";
+  if (resolveAllowedMethods(meta).some((item) => item.value === "local")) {
+    return "local";
   }
-  const stored = readStoredValue(storageKeys.defaultMethod, "");
-  if (stored && resolveAllowedMethods(meta).some((item) => item.value === stored)) {
-    return stored;
+  return resolveAllowedMethods(meta)[0]?.value ?? "local";
+}
+
+function resolveStoredMethod(meta: MetaPayload) {
+  const allowedMethods = resolveAllowedMethods(meta);
+  const storedMethod =
+    readStoredValue(storageKeys.defaultMethod, "") ||
+    readStoredValue(storageKeys.aiProvider, "");
+
+  if (storedMethod && allowedMethods.some((item) => item.value === storedMethod)) {
+    return storedMethod;
   }
-  return "gemini";
+
+  return resolveInitialMethod(meta);
 }
 
 export default function ExtractionsPage() {
@@ -77,35 +81,32 @@ export default function ExtractionsPage() {
   const [meta, setMeta] = useState<MetaPayload | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [mode, setMode] = useState("auto");
-  const [method, setMethod] = useState("gemini");
-  const [aiProvider, setAiProvider] = useState<AiProvider>("gemini");
+  const [method, setMethod] = useState("local");
+  const [ollamaHost, setOllamaHost] = useState<string>(localConfig.defaultHost);
+  const [localModel, setLocalModel] = useState<string>(localConfig.defaultModel);
   const [geminiApiKey, setGeminiApiKey] = useState("");
-  const [geminiModel, setGeminiModel] = useState("gemini-2.5-flash");
-  const [openaiApiKey, setOpenaiApiKey] = useState("");
-  const [openaiModel, setOpenaiModel] = useState("gpt-4o");
-  const [anthropicApiKey, setAnthropicApiKey] = useState("");
-  const [anthropicModel, setAnthropicModel] = useState("claude-3-5-sonnet-latest");
-  const [advanced, setAdvanced] = useState(true);
+  const [geminiModel, setGeminiModel] = useState("");
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [dragActive, setDragActive] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [result, setResult] = useState<ExtractionBatchPayload | null>(null);
 
   useEffect(() => {
-    fetchMeta().then((payload) => {
-      const storedProvider = readStoredValue(storageKeys.aiProvider, "gemini");
-      setMeta(payload);
-      setAiProvider(
-        storedProvider === "openai" || storedProvider === "anthropic" ? storedProvider : "gemini"
-      );
-      setGeminiModel(readStoredValue(storageKeys.geminiModel, payload.defaultGeminiModel));
-      setGeminiApiKey(readStoredValue(storageKeys.geminiKey, ""));
-      setOpenaiModel(readStoredValue(storageKeys.openaiModel, aiProviders.openai.defaultModel));
-      setOpenaiApiKey(readStoredValue(storageKeys.openaiKey, ""));
-      setAnthropicModel(readStoredValue(storageKeys.anthropicModel, aiProviders.anthropic.defaultModel));
-      setAnthropicApiKey(readStoredValue(storageKeys.anthropicKey, ""));
-      setMethod(resolveInitialMethod(payload));
-    });
+    fetchMeta()
+      .then((payload) => {
+        setMeta(payload);
+        setOllamaHost(readStoredValue(storageKeys.ollamaHost, payload.defaultOllamaHost ?? localConfig.defaultHost));
+        setLocalModel(readStoredValue(storageKeys.localModel, payload.defaultLocalModel ?? localConfig.defaultModel));
+        setGeminiModel(payload.defaultGeminiModel);
+        const initialMethod = resolveStoredMethod(payload);
+        setMethod(initialMethod);
+        writeStoredValue(storageKeys.defaultMethod, initialMethod);
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : "Backend DocuAI non joignable.");
+      });
   }, []);
 
   const availableMethods = useMemo(
@@ -113,12 +114,17 @@ export default function ExtractionsPage() {
     [meta]
   );
 
-  const extractionOptions = [
-    { value: "gemini", label: "Gemini (API)" },
-    { value: "openai", label: "GPT-4o (OpenAI)" },
-    { value: "anthropic", label: "Claude 3.5 Sonnet (Anthropic)" },
-    { value: "ocr", label: "OCR local (sans API)" },
-  ] as const;
+  const extractionOptions = availableMethods.length ? availableMethods : fallbackMethods;
+
+  const localPipelineIncomplete =
+    method === "local" && meta?.localPipeline && !meta.localPipeline.available;
+  const methodHelp = localPipelineIncomplete
+    ? "Pipeline IA local incomplet : installe Docling, PaddleOCR et lance Ollama/Qwen2.5. OCR local classique reste disponible pour comparer ou depanner."
+    : method === "local"
+      ? "Mode par defaut : pretraitement, Docling, controle qualite, fallback PaddleOCR si besoin, puis extraction JSON par Qwen2.5 local via Ollama."
+      : method === "ocr"
+        ? "OCR local classique sans Qwen. Utile seulement pour comparer ou depanner."
+        : "Ancien moteur conserve : Gemini API pour les documents complexes, avec une cle dans .env ou saisie ici pour la session.";
 
   useEffect(() => {
     if (!meta) {
@@ -132,78 +138,67 @@ export default function ExtractionsPage() {
       return;
     }
 
-    if (method === "ocr" && (mode === "receipt" || mode === "supplier")) {
-      if (availableMethods.some((item) => item.value === "gemini")) {
-        setMethod("gemini");
-        setAiProvider("gemini");
-        setInfo("Ticket de caisse et facture fournisseur exigent Gemini. La methode a ete rebasculee automatiquement.");
-      } else {
-        setInfo("Ce type de document exige Gemini. Ajoutez votre cle Gemini dans cette page pour continuer.");
-      }
-      return;
-    }
     setInfo(
-      mode === "auto" && method === "ocr"
-        ? "En mode Auto avec OCR local, les tickets et factures fournisseur ne pourront pas etre extraits."
-        : method === "gemini" && !aiProviders[aiProvider].supported
-          ? `${aiProviders[aiProvider].label} prepare bien les champs API ici, mais ce moteur n'est pas encore connecte au backend. Utilisez Gemini ou OCR pour une extraction immediate.`
+      method === "local" && meta?.localPipeline && !meta.localPipeline.available
+        ? "Mode local par defaut selectionne. Installe Docling, PaddleOCR et lance Ollama/Qwen2.5 pour activer toute l'architecture hybride."
         : ""
     );
-  }, [aiProvider, availableMethods, meta, method, mode]);
+  }, [availableMethods, meta, method]);
 
-  const selectedAiConfig = aiProviders[aiProvider];
-  const selectedApiKey =
-    aiProvider === "gemini"
-      ? geminiApiKey
-      : aiProvider === "openai"
-        ? openaiApiKey
-        : anthropicApiKey;
-  const selectedModelName =
-    aiProvider === "gemini"
-      ? geminiModel
-      : aiProvider === "openai"
-        ? openaiModel
-        : anthropicModel;
+  const previewFile = files[0] ?? null;
+  const previewKind = previewFile
+    ? previewFile.type === "application/pdf" || previewFile.name.toLowerCase().endsWith(".pdf")
+      ? "pdf"
+      : previewFile.type.startsWith("image/")
+        ? "image"
+        : "other"
+    : "empty";
 
-  const setSelectedApiKey = (value: string) => {
-    if (aiProvider === "gemini") {
-      setGeminiApiKey(value);
+  useEffect(() => {
+    if (!previewFile) {
+      setPreviewUrl("");
       return;
     }
-    if (aiProvider === "openai") {
-      setOpenaiApiKey(value);
-      return;
-    }
-    setAnthropicApiKey(value);
-  };
 
-  const setSelectedModelName = (value: string) => {
-    if (aiProvider === "gemini") {
-      setGeminiModel(value);
+    const nextUrl = URL.createObjectURL(previewFile);
+    setPreviewUrl(nextUrl);
+    return () => URL.revokeObjectURL(nextUrl);
+  }, [previewFile]);
+
+  const handleSelectedFiles = (selected: File[]) => {
+    const supported = selected.filter(isSupportedFile);
+    if (!supported.length) {
+      setError("Format non supporte. Utilise JPG, PNG, TIFF ou PDF.");
       return;
     }
-    if (aiProvider === "openai") {
-      setOpenaiModel(value);
-      return;
-    }
-    setAnthropicModel(value);
+    setFiles(supported);
+    setResult(null);
+    setError("");
   };
 
   const handleFileChange = (selected: FileList | null) => {
     if (!selected) {
       return;
     }
-    setFiles(Array.from(selected));
+    handleSelectedFiles(Array.from(selected));
+  };
+
+  const handleDrop = (event: DragEvent<HTMLLabelElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setDragActive(false);
+    handleSelectedFiles(Array.from(event.dataTransfer.files));
+  };
+
+  const handleDrag = (event: DragEvent<HTMLLabelElement>, active: boolean) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setDragActive(active);
   };
 
   const runExtraction = async () => {
     if (!files.length) {
       setError("Ajoute au moins un document avant de lancer l'extraction.");
-      return;
-    }
-
-    if (method === "gemini" && !selectedAiConfig.supported) {
-      setError(`${selectedAiConfig.label} n'est pas encore connecte au backend. Choisis Gemini ou OCR pour lancer l'extraction maintenant.`);
       return;
     }
 
@@ -223,6 +218,8 @@ export default function ExtractionsPage() {
     form.append("method", method);
     form.append("geminiApiKey", geminiApiKey);
     form.append("geminiModel", geminiModel);
+    form.append("ollamaHost", ollamaHost);
+    form.append("localModel", localModel);
     form.append("retries", "5");
     form.append("retryDelay", "2");
     form.append("originsJson", JSON.stringify(origins));
@@ -230,20 +227,26 @@ export default function ExtractionsPage() {
     try {
       const response = await uploadExtractions(form);
       setResult(response);
+      const firstError = response.items.find((item) => item.status === "error")?.error;
+      if (response.summary.errorCount > 0) {
+        setError(
+          response.summary.okCount > 0
+            ? `${response.summary.errorCount} fichier(s) en erreur. Consulte le resume ci-dessous.`
+            : firstError || "Extraction impossible. Verifie la configuration du pipeline local."
+        );
+      } else {
+        setError("");
+      }
       writeStoredValue(storageKeys.lastExtraction, JSON.stringify(response));
-      writeStoredValue(storageKeys.aiProvider, aiProvider);
-      writeStoredValue(storageKeys.geminiKey, geminiApiKey);
-      writeStoredValue(storageKeys.geminiModel, geminiModel);
-      writeStoredValue(storageKeys.openaiKey, openaiApiKey);
-      writeStoredValue(storageKeys.openaiModel, openaiModel);
-      writeStoredValue(storageKeys.anthropicKey, anthropicApiKey);
-      writeStoredValue(storageKeys.anthropicModel, anthropicModel);
+      writeStoredValue(storageKeys.aiProvider, method);
+      writeStoredValue(storageKeys.ollamaHost, ollamaHost);
+      writeStoredValue(storageKeys.localModel, localModel);
       writeStoredValue(storageKeys.defaultMethod, method);
       if (response.latestSuccess?.historyEntryKey) {
         router.push(`/documents?entry=${response.latestSuccess.historyEntryKey}`);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur inconnue.");
+      setError(err instanceof Error ? err.message : "Erreur extraction a verifier.");
     } finally {
       setLoading(false);
     }
@@ -254,7 +257,7 @@ export default function ExtractionsPage() {
       <PageHeader
         eyebrow="2. EXTRACTION (Nouvelle extraction)"
         title="Nouvelle extraction"
-        description="Importe tes documents, configure Gemini ou OCR local puis lance le meme pipeline metier dans une interface plus guidee."
+        description="Importe tes documents, puis lance le pipeline IA local Docling + PaddleOCR + Qwen2.5 par defaut."
       />
 
       <div className="flex flex-wrap items-center gap-4 rounded-[18px] border border-[rgba(139,147,172,0.14)] bg-[#fbfcff] px-4 py-3 text-[12px] text-[#5e6888] dark:border-white/10 dark:bg-[#0f1525] dark:text-[#b1bcda]">
@@ -284,7 +287,17 @@ export default function ExtractionsPage() {
             <div className="mb-4 text-[12px] text-[#8d95ae]">
               Glissez-deposez vos fichiers ici ou parcourez.
             </div>
-            <label className="flex min-h-[240px] cursor-pointer flex-col items-center justify-center gap-4 rounded-[18px] border border-dashed border-[rgba(124,77,255,0.28)] bg-[#fcfbff] px-6 py-8 text-center dark:border-[#4a3f78] dark:bg-[#0f1525]">
+            <label
+              onDragEnter={(event) => handleDrag(event, true)}
+              onDragOver={(event) => handleDrag(event, true)}
+              onDragLeave={(event) => handleDrag(event, false)}
+              onDrop={handleDrop}
+              className={`flex min-h-[240px] cursor-pointer flex-col items-center justify-center gap-4 rounded-[18px] border border-dashed px-6 py-8 text-center transition ${
+                dragActive
+                  ? "border-[#7c4dff] bg-[#f4efff] shadow-[0_14px_28px_rgba(124,77,255,0.12)] dark:border-[#9277ff] dark:bg-[#15172b]"
+                  : "border-[rgba(124,77,255,0.28)] bg-[#fcfbff] dark:border-[#4a3f78] dark:bg-[#0f1525]"
+              }`}
+            >
               <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[rgba(139,147,172,0.16)] bg-white text-[#7c4dff] dark:border-white/10 dark:bg-[#121829]">
                 <CloudUpload className="h-7 w-7" />
               </div>
@@ -305,6 +318,50 @@ export default function ExtractionsPage() {
                 Parcourir les fichiers
               </span>
             </label>
+
+            {previewFile ? (
+              <div className="mt-5 overflow-hidden rounded-[18px] border border-[rgba(139,147,172,0.14)] bg-[#fbfcff] dark:border-white/10 dark:bg-[#0f1525]">
+                <div className="flex items-center justify-between gap-3 border-b border-[rgba(139,147,172,0.12)] px-4 py-3 dark:border-white/10">
+                  <div className="min-w-0">
+                    <div className="text-[12px] font-semibold text-[#687292]">Apercu du document</div>
+                    <div className="truncate text-[12px] text-[#1b2440] dark:text-white">{previewFile.name}</div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Badge tone="purple">
+                      {previewKind === "pdf" ? "PDF" : previewKind === "image" ? "Image" : "Fichier"}
+                    </Badge>
+                    <Button onClick={runExtraction} disabled={loading || !files.length} size="sm" className="min-w-[165px]">
+                      <span>{loading ? "Traitement..." : "Lancer l'extraction"}</span>
+                      {loading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                {previewUrl && previewKind === "pdf" ? (
+                  <iframe
+                    className="h-[560px] w-full bg-white"
+                    src={previewUrl}
+                    title={`Apercu ${previewFile.name}`}
+                  />
+                ) : null}
+
+                {previewUrl && previewKind === "image" ? (
+                  <div className="flex max-h-[560px] items-start justify-center overflow-auto bg-[#f5f7fb] p-3 dark:bg-[#0b1020]">
+                    <img
+                      alt={`Apercu ${previewFile.name}`}
+                      className="max-h-[520px] max-w-full rounded-xl border border-[rgba(139,147,172,0.14)] bg-white object-contain dark:border-white/10"
+                      src={previewUrl}
+                    />
+                  </div>
+                ) : null}
+
+                {previewKind === "other" ? (
+                  <div className="px-4 py-6 text-[12px] text-[#8d95ae]">
+                    Ce type de fichier est charge, mais l'apercu navigateur n'est pas disponible.
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
             <div className="mt-5">
               <div className="mb-3 text-[12px] font-semibold text-[#687292]">Type de documents</div>
@@ -342,7 +399,7 @@ export default function ExtractionsPage() {
             <ul className="space-y-2 text-[12px] text-[#6b7594] dark:text-[#b1bcda]">
               <li>Formats supportes : JPG, PNG, PDF</li>
               <li>Taille max : 20 Mo par fichier</li>
-              <li>Extraction avec IA (Gemini) ou OCR</li>
+              <li>Pipeline principal : Docling + PaddleOCR fallback + Qwen2.5 local</li>
             </ul>
           </Card>
         </div>
@@ -356,19 +413,12 @@ export default function ExtractionsPage() {
             <div className="space-y-2">
               <div className="text-[12px] font-semibold text-[#687292]">Methode d'extraction</div>
               <Select
-                value={method === "ocr" ? "ocr" : aiProvider}
+                value={method}
                 onChange={(event) => {
-                  const nextValue = event.target.value as "gemini" | "openai" | "anthropic" | "ocr";
-                  if (nextValue === "ocr") {
-                    setMethod("ocr");
-                    writeStoredValue(storageKeys.defaultMethod, "ocr");
-                    return;
-                  }
-
-                  setMethod("gemini");
-                  setAiProvider(nextValue);
+                  const nextValue = event.target.value;
+                  setMethod(nextValue);
                   writeStoredValue(storageKeys.aiProvider, nextValue);
-                  writeStoredValue(storageKeys.defaultMethod, "gemini");
+                  writeStoredValue(storageKeys.defaultMethod, nextValue);
                 }}
               >
                 {extractionOptions.map((item) => (
@@ -377,83 +427,69 @@ export default function ExtractionsPage() {
                   </option>
                 ))}
               </Select>
-              <div className="rounded-xl bg-[#eef9f0] px-3 py-2 text-[11px] text-[#2eb764] dark:bg-[#11271d] dark:text-[#86f7b6]">
-                Recommande pour une meilleure precision
+              <div className={`rounded-xl px-3 py-2 text-[11px] ${
+                localPipelineIncomplete
+                  ? "bg-[#fff7e6] text-[#b26b00] dark:bg-[#2c210e] dark:text-[#ffd08a]"
+                  : "bg-[#eef9f0] text-[#2eb764] dark:bg-[#11271d] dark:text-[#86f7b6]"
+              }`}>
+                {methodHelp}
               </div>
             </div>
-
-            <Switch
-              checked={advanced}
-              onChange={setAdvanced}
-              label="Extraction avancee"
-            />
 
             <div className="space-y-2">
               <div className="text-[12px] font-semibold text-[#687292]">Langue du document</div>
               <Select defaultValue="Francais">
                 <option>Francais</option>
                 <option>Anglais</option>
-                <option>Mixte</option>
+                <option>Arabe</option>
               </Select>
             </div>
 
-            {method !== "ocr" ? (
-              <>
+            {method === "gemini" ? (
+              <div className="space-y-3">
                 <div className="space-y-2">
-                  <div className="text-[12px] font-semibold text-[#687292]">Modele IA</div>
-                  <Select
-                    value={aiProvider}
-                    onChange={(event) => {
-                      const nextProvider = event.target.value as AiProvider;
-                      setAiProvider(nextProvider);
-                      writeStoredValue(storageKeys.aiProvider, nextProvider);
-                    }}
-                  >
-                    <option value="gemini">Gemini 2.5 Flash</option>
-                    <option value="openai">GPT-4o</option>
-                    <option value="anthropic">Claude 3.5 Sonnet</option>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="text-[12px] font-semibold text-[#687292]">Cle API {selectedAiConfig.provider}</div>
+                  <div className="text-[12px] font-semibold text-[#687292]">Modele Gemini</div>
+                  <Input
+                    value={geminiModel}
+                    onChange={(event) => setGeminiModel(event.target.value)}
+                    placeholder={meta?.defaultGeminiModel ?? "gemini-2.5-flash"}
+                  />
+                  <div className="text-[12px] font-semibold text-[#687292]">Cle API Gemini</div>
                   <Input
                     type="password"
-                    value={selectedApiKey}
-                    onChange={(event) => setSelectedApiKey(event.target.value)}
-                    placeholder={selectedAiConfig.keyEnv}
-                  />
-                  <Input
-                    value={selectedModelName}
-                    onChange={(event) => setSelectedModelName(event.target.value)}
-                    placeholder={selectedAiConfig.defaultModel}
+                    value={geminiApiKey}
+                    onChange={(event) => setGeminiApiKey(event.target.value)}
+                    placeholder={meta?.geminiConfigured ? "Cle deja configuree dans .env" : "GEMINI_API_KEY"}
                   />
                 </div>
-
                 <div className="rounded-[16px] border border-[rgba(139,147,172,0.14)] bg-[#fbfcff] p-3 text-[12px] text-[#6b7594] dark:border-white/10 dark:bg-[#0f1525] dark:text-[#b1bcda]">
-                  <div className="mb-1 font-semibold text-[#1b2440] dark:text-white">
-                    Ou mettre la cle {selectedAiConfig.provider} ?
-                  </div>
-                  <div className="mb-2">Modele choisi : {selectedAiConfig.label}</div>
-                  <div>{selectedAiConfig.supported ? meta?.geminiInstructions.session : "Vous pouvez deja preparer cette cle dans l'interface pour la future integration."}</div>
+                  <div className="mb-1 font-semibold text-[#1b2440] dark:text-white">Gemini API</div>
+                  <div>Mode API conserve pour comparer avec le pipeline local ou traiter des documents complexes.</div>
                   <div className="mt-2">
-                    {selectedAiConfig.supported
-                      ? meta?.geminiInstructions.server
-                      : `Ajoutez ${selectedAiConfig.keyEnv}=... dans .env quand ce moteur sera connecte au backend.`}
-                  </div>
-                  <div className="mt-2 text-[#7c4dff] dark:text-[#c7b7ff]">
-                    {selectedAiConfig.note}
+                    Etat backend : cle Gemini {meta?.geminiConfigured ? "configuree dans .env" : "non configuree"}.
                   </div>
                 </div>
-              </>
-            ) : (
-              <div className="rounded-[16px] border border-[rgba(139,147,172,0.14)] bg-[#fbfcff] p-3 text-[12px] text-[#6b7594] dark:border-white/10 dark:bg-[#0f1525] dark:text-[#b1bcda]">
-                <div className="mb-1 font-semibold text-[#1b2440] dark:text-white">OCR local actif</div>
-                <div>Aucune cle API n'est necessaire pour ce mode.</div>
-                <div className="mt-2">Le traitement utilisera Tesseract / OCR local directement sur cette machine.</div>
-                <div className="mt-2">Si tu veux afficher les champs IA, choisis `Gemini (API)` dans la methode d'extraction.</div>
               </div>
-            )}
+            ) : null}
+
+            {method === "ocr" ? (
+              <div className="rounded-[16px] border border-[rgba(139,147,172,0.14)] bg-[#fbfcff] p-3 text-[12px] text-[#6b7594] dark:border-white/10 dark:bg-[#0f1525] dark:text-[#b1bcda]">
+                <div className="mb-1 font-semibold text-[#1b2440] dark:text-white">OCR local classique</div>
+                <div>Mode sans Qwen conserve uniquement pour depanner ou comparer. Le moteur principal reste Docling + PaddleOCR + Qwen2.5.</div>
+              </div>
+            ) : null}
+
+            {method === "local" ? (
+            <div className="space-y-3">
+              <div className="rounded-[16px] border border-[rgba(139,147,172,0.14)] bg-[#fbfcff] p-3 text-[12px] text-[#6b7594] dark:border-white/10 dark:bg-[#0f1525] dark:text-[#b1bcda]">
+                <div className="mb-1 font-semibold text-[#1b2440] dark:text-white">{localConfig.label}</div>
+                <div>Pipeline actif : document vers pretraitement, Docling, controle qualite, fallback PaddleOCR si besoin, puis JSON extrait par Qwen2.5 via Ollama.</div>
+                <div className="mt-2">
+                  Etat backend : Docling {meta?.localPipeline?.doclingAvailable ? "pret" : "non installe"} / PaddleOCR {meta?.localPipeline?.paddleocrAvailable ? "pret" : "non installe"} / Ollama {meta?.localPipeline?.ollamaAvailable ? "pret" : "non joignable"}.
+                </div>
+              </div>
+            </div>
+            ) : null}
           </Card>
 
           <Card className="space-y-3">
@@ -481,8 +517,8 @@ export default function ExtractionsPage() {
                 <div className="text-[12px] text-[#8d95ae]">Aucun document charge.</div>
               )}
             </div>
-            <Button onClick={runExtraction} className="w-full justify-between" disabled={loading}>
-              <span>{loading ? "Traitement..." : "Suivant"}</span>
+            <Button onClick={runExtraction} className="w-full justify-between" disabled={loading || !files.length}>
+              <span>{loading ? "Traitement..." : "Lancer l'extraction"}</span>
               {loading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             </Button>
             {error ? <div className="text-[12px] text-[#df4d64]">{error}</div> : null}

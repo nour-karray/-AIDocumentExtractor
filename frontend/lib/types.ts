@@ -82,6 +82,7 @@ export type HistoryListPayload = {
     dateFrom: string | null;
     dateTo: string | null;
     availableKinds: { value: string; label: string }[];
+    availableDates: { value: string; label: string }[];
   };
   pagination: {
     page: number;
@@ -128,6 +129,17 @@ export type MetaPayload = {
   modes: { value: string; label: string }[];
   methods: { value: string; label: string }[];
   defaultGeminiModel: string;
+  defaultLocalModel?: string;
+  defaultOllamaHost?: string;
+  localPipeline?: {
+    doclingAvailable: boolean;
+    paddleocrAvailable?: boolean;
+    ollamaAvailable: boolean;
+    available: boolean;
+    model: string;
+    host: string;
+    architecture?: string[];
+  };
   geminiConfigured: boolean;
   geminiEnvKey: string;
   geminiInstructions: {
@@ -135,7 +147,41 @@ export type MetaPayload = {
     server: string;
     pathHint: string;
   };
+  auth?: {
+    enabled: boolean;
+    loginUrl: string;
+    meUrl: string;
+    tokenType: "bearer";
+    ttlMinutes: number;
+    usernameHint: string | null;
+  };
   navigation: { href: string; label: string }[];
+};
+
+export type AuthLoginPayload = {
+  username: string;
+  password: string;
+};
+
+export type AuthRegisterPayload = {
+  username: string;
+  password: string;
+};
+
+export type AuthLoginResponse = {
+  accessToken: string;
+  tokenType: "bearer";
+  expiresAt: string;
+  user: {
+    username: string;
+  };
+};
+
+export type AuthMeResponse = {
+  user: {
+    username: string;
+  };
+  mode: "bearer" | "disabled";
 };
 
 export type ModelsPayload = {
@@ -144,6 +190,11 @@ export type ModelsPayload = {
     geminiConfigured: boolean;
     tesseractConfigured: boolean;
     tesseractPath: string;
+    ollamaHost?: string;
+    localModel?: string;
+    doclingConfigured?: boolean;
+    paddleocrConfigured?: boolean;
+    ollamaConfigured?: boolean;
   };
   models: {
     id: string;
@@ -156,7 +207,7 @@ export type ModelsPayload = {
     lastUsed?: string | null;
     available?: boolean;
     toggleable?: boolean;
-    methodValue?: "gemini" | "ocr" | null;
+    methodValue?: "local" | "gemini" | "ocr" | null;
     reason?: string | null;
   }[];
   coverage: ChartDatum[];

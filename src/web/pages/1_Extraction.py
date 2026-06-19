@@ -410,7 +410,11 @@ if docs_to_process:
             elif effective_mode == "auto":
                 doc_kind = "medical_lab_report"
                 try:
-                    doc_kind = detect_document_type(tmp_path)
+                    doc_kind = detect_document_type(
+                        tmp_path,
+                        filename_hint=uploaded_name,
+                        path_hint=source_origin,
+                    )
                     detected_kind = doc_kind
                 except Exception:
                     doc_kind = "medical_lab_report"

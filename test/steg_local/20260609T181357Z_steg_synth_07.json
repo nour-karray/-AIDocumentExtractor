@@ -1,0 +1,35 @@
+{
+  "document_type": "steg_invoice",
+  "reference": "520072077",
+  "numero_compteur": "810203",
+  "date_facture": "2026-02-14",
+  "montant_a_payer": "109.117",
+  "date_limite_paiement": "2026-03-11",
+  "periode_du": "2025-12-16",
+  "periode_au": "2026-02-12",
+  "coupon_reference_raw": "000006552007207700109116",
+  "coupon_montant": "109.117",
+  "confidence_note": "high",
+  "warnings": [],
+  "extraction_quality": 0.94,
+  "extraction_source": "hybrid_local_fast_steg_ocr",
+  "raw_text": "FACTURE STEG\nReference 520072077\nNumero compteur 810203\nDate facture 2026-02-14\nMontant a payer 109.117\nDate limite paiement 2026-03-11\nPeriode du 2025-12-16\nPeriode au 2026-02-12\nCoupon reference 000006552007207700109116",
+  "local_pipeline": {
+    "architecture": "Pretraitement -> OCR STEG specialise -> JSON structure",
+    "content_source": "synthetic_test_image",
+    "qwen_used": false,
+    "reason": "Donnees generees pour test."
+  },
+  "_meta": {
+    "saved_at": "2026-06-09T18:13:57+00:00",
+    "source_filename": "steg_synth_07.jpg",
+    "kind": "steg_local",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "steg_invoice",
+    "source_mime": "image/jpeg",
+    "source_size": 186826,
+    "stored_in_database": true,
+    "source_file_relative": "steg_local\\20260609T181357Z_steg_synth_07.jpg"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "document_type": "steg_invoice",
+  "reference": null,
+  "numero_compteur": null,
+  "date_facture": null,
+  "montant_a_payer": null,
+  "date_limite_paiement": null,
+  "periode_du": null,
+  "periode_au": null,
+  "coupon_reference_raw": null,
+  "coupon_montant": null,
+  "confidence_note": "low",
+  "raw_text": "# OCR fallback image\n\nUe cam a YS WAY A ay Nae. eet) 33 3\n\nNN ee AC GeO AX VANS ny VR ass %\n\nSi Be aA \\ ; & N \\ z\\ 1 \\} ane) a\n\nWh 34454 BW V0 8 m ve 35 2.\n\nNik Sra ye 1 WA 4 yy VAVkss deh\n\nMin ae Da a ey 4 y ee ~ vera ° \\ 45% \\\n\nuy | ee eo VAY 3 ae Ss XA 3\\ ‘\n\n’ I my a B ‘a mm \\y 3 sa% ay \\ ca) '\n\nWil H wh ae Vi ‘ \\3) 38\\\" A,\n\nie nt i cs 4, coe ae 3 ce \\e \\ Ss S\n\nNWA CRE w) % “es 2 2 Ny Ye 3\n\n\\ig Wi xy mA 28 \\ ane: ¥\n\n\\ WH Ifaya irs NU ae 4% + % A NS 2 at —e Hy HN AIA | hit)\nWit (tt ea i. ok Sa _ | ih \\ MA aN\n} \" iy \\ in ih oO x oO ag a \\ ul i Wh sil i Hi | | i f\nBMA Wey Ue 14 Waa 4 Ye? % acd 18) PANG Vee NV fF F vA | ) 4\nMi Ran ih aa, | Tl ee ES\n\nTE iy AD RU a ANS ae ty VAR | 1) A Ht || Wi NG AGT eid’ ids Ae\n\n(004 OR AN eS BO Nit ny) i Hv ey. \" Hite",
+  "extraction_source": "hybrid_local_fast_steg_ocr",
+  "warnings": [
+    {
+      "code": "FAST_STEG_OCR",
+      "message": "Facture STEG image: OCR texte rapide utilise pour remplir les champs sans attendre Qwen/Ollama."
+    }
+  ],
+  "local_pipeline": {
+    "architecture": "Pretraitement -> OCR STEG specialise -> JSON structure",
+    "content_source": "tesseract_fast_text",
+    "qwen_used": false,
+    "reason": "Retour rapide pour eviter le timeout Qwen 7B sur image STEG.",
+    "fallback_used": true,
+    "fallback_quality": {
+      "score": 100.0,
+      "usable": true,
+      "characters": 761,
+      "words": 207,
+      "lines": 20,
+      "tableLines": 2,
+      "digitCount": 44,
+      "noiseRatio": 0.0,
+      "reasons": []
+    },
+    "docling_error": "Image/scan: OCR fallback direct pour eviter un traitement Docling trop long. PaddleOCR: PaddleOCR a depasse 4 secondes; fallback OCR local rapide utilise."
+  },
+  "_meta": {
+    "saved_at": "2026-06-07T22:29:15.098482+00:00",
+    "source_filename": "steg13.jpg",
+    "kind": "steg_local",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "steg_invoice",
+    "source_mime": "image/jpeg",
+    "source_size": 456993,
+    "stored_in_database": true,
+    "source_file_relative": "steg_local\\20260607T222915Z_steg13.jpg",
+    "trashed_at": "2026-06-08T21:46:57.091956+00:00",
+    "original_relative_path": "steg_local\\20260607T222915Z_steg13.json"
+  }
+}

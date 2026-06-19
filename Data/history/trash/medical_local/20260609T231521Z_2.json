@@ -1,0 +1,58 @@
+{
+  "document_type": "medical_lab_report",
+  "lab_info": {
+    "lab_name": "Médical",
+    "doctor_name": "De Vasmine Khaled"
+  },
+  "patient_info": {
+    "patient_name": "Jalel Ben Slimane"
+  },
+  "document_metadata": {
+    "dossier_number": "051125-099 Perdus 06112025 10",
+    "source_file": "C:\\Users\\User\\AppData\\Local\\Temp\\tmpvvysnmni.jpg",
+    "document_type": "medical_lab_report"
+  },
+  "tests": [],
+  "warnings": [
+    {
+      "code": "MEDICAL_OCR_VARIANT_SELECTED",
+      "message": "Variante OCR retenue: original:gray900:psm11 (score 124.0, 12 tentative(s))."
+    },
+    {
+      "code": "DOCUMENT_PREPROCESSING_APPLIED",
+      "message": "Image redressee et amelioree avant OCR medical rapide.",
+      "context": "{'enabled': True, 'steps': ['format_and_size_validation', 'exif_orientation_correction', 'resize', 'document_perspective_rectification', 'resize', 'hough_line_deskew', 'deskew', 'contrast_and_sharpness_enhancement'], 'input_name': 'tmpvvysnmni.jpg', 'input_extension': '.jpg', 'input_size_bytes': 96788, 'original_width': 495, 'original_height': 1024, 'resize_scale': 2.0, 'perspective_area_ratio': 0.1318, 'perspective_aspect_ratio': 2.9957, 'perspective_correction': 'applied', 'perspective_output_width': 871, 'perspective_output_height': 301, 'auto_orientation_scores': {0: 405.75, 90: 72.0, 180: 353.5, 270: 80.0}, 'auto_orientation_degrees': 0, 'hough_deskew_angle': -2.033, 'deskew_angle': -1.548, 'output_width': 1779, 'output_height': 710, 'output_format': 'png', 'output_size_bytes': 1614740}"
+    },
+    {
+      "code": "FAST_MEDICAL_OCR",
+      "message": "Extraction rapide utilisee pour eviter le blocage du pipeline local sur image medicale (original:gray900:psm11).",
+      "context": "C:\\Users\\User\\AppData\\Local\\Temp\\tmpvvysnmni.jpg"
+    },
+    {
+      "code": "AUTO_FAST_OCR_FALLBACK",
+      "message": "Analyse medicale image: fallback rapide utilise pour garantir un resultat sans blocage utilisateur."
+    }
+  ],
+  "raw_text": "PE\n\n2\n\n|\n\nLaboratoire Médical\n\nbua gall Gand) val ok\n\nde la Méditerranée\n\nT0 1/1\n\nFac So aaa? od\n\nill baa shall Ge\n\nFa ram\n\nAs acts\n\ntan Gate Cabs,\n\nAi écrin\n\nacer\n\naust BNA Saas ae\n\nae esas\n\nMAHARES le: o6/1172025\n\nere)\n\nMr JALEL BEN SLIMANE)\n\nDossier N° 051125-099\n\nPerdus\n\n06112025 10:10\n\nNom\n\nCode Patient: 124567\n\na\n\nDr. YASMINE KHALED\n\nDemandé par Dr\n\nDe VASMINE KHALED\n\n|\n\n—\n\n——\n\nPaget\n\nBIOCHIMIE CLINIG\\\n\nVar\n\nmate\n\n‘Antti\n\nGLYCEMIE à jet,\n\n09890\n\n(ur\n\nsas mol\n\nsé\n\nCHOLESTEROL TOTAL.\n\nLanga\n\n(15-25)\n\nS65 mmo\n\n8-648)\n\nLDL- CHOLESTEROL.\n\nDace:\n\nog\n\n(98-188)\n\n239 melt\n\n(25-487)\n\n‘TRIGLYCERIDES.\n\n13081\n\n(06-148)\n\n148 mmo\n\n(8-188)\n\nUREE,\n\n0359\n\n(0-03)\n\nSmell\n\n(146-53)\n\nCREATININE.\n\nTong\n\na)\n\n72 youl\n\n(siss-im9)\n\nASAT ou GOT,\n\nozsun\n\n7\n\n5)\n\n2400 00.\n\n(nfeieura 40)\n\nALAT où sGPT.\n\nnov\n\n(és)\n\n2800\n\nCnféieurà 40)\n\nCu 0)\n\nSiné pou Validation Dr, Amina Ghote (Blois\n\nMédical\n\nvor\n\njterranée)\n\nnés\n\nrt\n\nde las\n\npe)\n\nmater\n\nsalt 3060 - 4 3x6 10e\n\nPoi GD oie\n\nJes Marys - Rez de Chaussé\n\n2 -B.P.Ne 4-060 Mahares\n\nCentre Médical de Mahares - Rue\n\n‘Contact : 70 034 033 - Tél\n\nFax: 74294 900 Stil, cls - 70 034 083 : Jee!\n",
+  "extraction_source": "hybrid_local_fast_medical_ocr",
+  "local_pipeline": {
+    "architecture": "Pretraitement -> OCR medical rapide -> JSON structure",
+    "content_source": "medical_fast_ocr",
+    "qwen_used": false,
+    "reason": "Retour rapide pour les images medicales afin d'eviter une attente longue devant l'utilisateur."
+  },
+  "_meta": {
+    "saved_at": "2026-06-09T23:15:21.446346+00:00",
+    "source_filename": "2.jpg",
+    "kind": "medical_local",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "medical_lab_report",
+    "source_mime": "image/jpeg",
+    "source_size": 96788,
+    "stored_in_database": true,
+    "source_file_relative": "medical_local\\20260609T231521Z_2.jpg",
+    "trashed_at": "2026-06-09T23:45:29.963576+00:00",
+    "original_relative_path": "medical_local\\20260609T231521Z_2.json"
+  }
+}

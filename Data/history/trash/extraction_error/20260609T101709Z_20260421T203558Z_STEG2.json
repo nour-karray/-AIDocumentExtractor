@@ -1,0 +1,27 @@
+{
+  "document_type": "inconnu",
+  "error": "Extraction arretee apres 75 secondes pour eviter que l'interface reste bloquee.",
+  "mode": "auto",
+  "method": "gemini",
+  "warnings": [
+    {
+      "code": "EXTRACTION_FAILED",
+      "message": "Extraction arretee apres 75 secondes pour eviter que l'interface reste bloquee."
+    }
+  ],
+  "extraction_source": "gemini",
+  "_meta": {
+    "saved_at": "2026-06-09T10:17:09.111862+00:00",
+    "source_filename": "20260421T203558Z_STEG2.png",
+    "kind": "extraction_error",
+    "status": "error",
+    "error_message": "Extraction arretee apres 75 secondes pour eviter que l'interface reste bloquee.",
+    "detected_kind": "inconnu",
+    "source_mime": "image/png",
+    "source_size": 455954,
+    "stored_in_database": true,
+    "source_file_relative": "extraction_error\\20260609T101709Z_20260421T203558Z_STEG2.png",
+    "trashed_at": "2026-06-09T15:29:50.296964+00:00",
+    "original_relative_path": "extraction_error\\20260609T101709Z_20260421T203558Z_STEG2.json"
+  }
+}

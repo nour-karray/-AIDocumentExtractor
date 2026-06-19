@@ -1,0 +1,108 @@
+{
+  "reference": null,
+  "numero_compteur": null,
+  "date_facture": null,
+  "montant_a_payer": "80,000.00",
+  "date_limite_paiement": "2024.08.28",
+  "periode_du": null,
+  "periode_au": null,
+  "coupon_reference_raw": null,
+  "coupon_montant": null,
+  "confidence_note": "low",
+  "extraction_source": "hybrid_docling_paddleocr_qwen",
+  "warnings": [
+    {
+      "code": "BUSINESS_VALIDATION_ERRORS",
+      "message": "Certains champs obligatoires sont absents."
+    }
+  ],
+  "local_pipeline": {
+    "docling": true,
+    "preprocessing": {
+      "enabled": true,
+      "steps": [
+        "format_and_size_validation",
+        "exif_orientation_correction",
+        "resize",
+        "contrast_and_sharpness_enhancement"
+      ],
+      "input_name": "tmpw553j578.jpg",
+      "input_extension": ".jpg",
+      "input_size_bytes": 761784,
+      "original_width": 3024,
+      "original_height": 4032,
+      "resize_scale": 0.645,
+      "deskew_angle": 0.0,
+      "output_width": 1950,
+      "output_height": 2600,
+      "output_format": "png",
+      "output_size_bytes": 10694833
+    },
+    "paddleocr_fallback": true,
+    "content_source": "tesseract_fast_text",
+    "markdown_quality": {
+      "score": 5.0,
+      "usable": false,
+      "characters": 0,
+      "words": 0,
+      "lines": 0,
+      "tableLines": 0,
+      "digitCount": 0,
+      "noiseRatio": 0.0,
+      "reasons": [
+        "Texte trop court",
+        "Peu de mots exploitables",
+        "Aucun tableau Markdown detecte"
+      ]
+    },
+    "fallback_quality": {
+      "score": 100.0,
+      "usable": true,
+      "characters": 2174,
+      "words": 505,
+      "lines": 42,
+      "tableLines": 8,
+      "digitCount": 139,
+      "noiseRatio": 0.0,
+      "reasons": []
+    },
+    "docling_error": "Image/scan: OCR fallback direct pour eviter un traitement Docling trop long. PaddleOCR: PaddleOCR a depasse 12 secondes; fallback OCR local rapide utilise.",
+    "fallback_error": null,
+    "document_type_detection": {
+      "mode": "steg_invoice",
+      "schema": "schema.steg_invoice.v1"
+    },
+    "validation": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "REQUIRED_FIELD_MISSING",
+          "field": "reference"
+        },
+        {
+          "code": "REQUIRED_FIELD_MISSING",
+          "field": "numero_compteur"
+        },
+        {
+          "code": "REQUIRED_FIELD_MISSING",
+          "field": "date_facture"
+        }
+      ],
+      "warnings": []
+    },
+    "ollama_host": "http://127.0.0.1:11434",
+    "ollama_model": "qwen2.5:7b-instruct"
+  },
+  "_meta": {
+    "saved_at": "2026-06-07T20:33:45.822868+00:00",
+    "source_filename": "STEG4.jpg",
+    "kind": "steg_local",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "steg_invoice",
+    "source_mime": "image/jpeg",
+    "source_size": 761784,
+    "stored_in_database": true,
+    "source_file_relative": "steg_local\\20260607T203345Z_STEG4.jpg"
+  }
+}

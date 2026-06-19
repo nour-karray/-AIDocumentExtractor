@@ -25,10 +25,15 @@ COLOR_BORDER = colors.HexColor("#64b5f6")
 _KIND_DOC_LABEL: dict[str, str] = {
     "medical_gemini": "MEDICAL",
     "medical_ocr": "MEDICAL (OCR)",
+    "medical_local": "MEDICAL (DOCLING + QWEN)",
     "steg_gemini": "FACTURE STEG",
     "steg_ocr": "FACTURE STEG (OCR)",
+    "steg_local": "FACTURE STEG (DOCLING + QWEN)",
     "receipt": "TICKET DE CAISSE",
+    "receipt_local": "TICKET DE CAISSE (DOCLING + QWEN)",
     "supplier_invoice": "FACTURE FOURNISSEUR",
+    "supplier_invoice_local": "FACTURE FOURNISSEUR (DOCLING + QWEN)",
+    "document_local": "DOCUMENT (DOCLING + QWEN)",
 }
 
 _FONT_BODY = "Helvetica"
@@ -212,6 +217,15 @@ def _section_title(title: str) -> Paragraph:
     return Paragraph(f"<b>{title}</b>", ParagraphStyle("DXSec", parent=st, fontSize=12, spaceAfter=8))
 
 
+def _draw_page_footer(canvas: Any, doc: SimpleDocTemplate) -> None:
+    _register_fonts()
+    canvas.saveState()
+    canvas.setFont(_FONT_BODY, 8)
+    canvas.setFillColor(colors.HexColor("#667085"))
+    canvas.drawRightString(A4[0] - doc.rightMargin, 0.65 * cm, f"Page {doc.page}")
+    canvas.restoreState()
+
+
 def _analysis_row_gemini(row: dict[str, Any]) -> list[str]:
     """Ligne PDF : Analyse, Valeur, Unité uniquement (ignore Normes / Statut du JSON)."""
     name = (
@@ -345,7 +359,7 @@ def build_extraction_report_pdf(data: dict[str, Any], kind: str) -> bytes:
         )
         story.append(t2)
 
-    elif kind == "medical_ocr":
+    elif kind in ("medical_ocr", "medical_local"):
         lab = body.get("lab_info") or {}
         patient = body.get("patient_info") or {}
         if not isinstance(lab, dict):
@@ -404,10 +418,12 @@ def build_extraction_report_pdf(data: dict[str, Any], kind: str) -> bytes:
         )
         story.append(t2)
 
-    elif kind in ("steg_gemini", "steg_ocr"):
+    elif kind in ("steg_gemini", "steg_ocr", "steg_local"):
         story.append(_section_title("Facture STEG — champs extraits"))
         rows_kv = [
             ["Référence", str(body.get("reference") or "—")],
+            ["N° compteur", str(body.get("numero_compteur") or body.get("identifiant_compteur") or "—")],
+            ["Date facture", str(body.get("date_facture") or "—")],
             ["Montant à payer", str(body.get("montant_a_payer") or "—")],
             ["Date limite paiement", str(body.get("date_limite_paiement") or "—")],
             ["Période Du", str(body.get("periode_du") or "—")],
@@ -432,7 +448,7 @@ def build_extraction_report_pdf(data: dict[str, Any], kind: str) -> bytes:
         )
         story.append(t1)
 
-    elif kind == "receipt":
+    elif kind in ("receipt", "receipt_local"):
         story.append(_section_title("Ticket de caisse"))
         rows_kv = [
             ["Magasin", str(body.get("store_name") or "—")],
@@ -485,7 +501,7 @@ def build_extraction_report_pdf(data: dict[str, Any], kind: str) -> bytes:
             )
             story.append(t2)
 
-    elif kind == "supplier_invoice":
+    elif kind in ("supplier_invoice", "supplier_invoice_local"):
         story.append(_section_title("Informations générales"))
         rtl = body.get("ocr_rtl_text_ratio")
         rtl_s = f"{float(rtl):.3f}" if isinstance(rtl, (int, float)) else (str(rtl) if rtl not in (None, "") else "—")
@@ -657,5 +673,5 @@ def build_extraction_report_pdf(data: dict[str, Any], kind: str) -> bytes:
         )
         story.append(t1)
 
-    doc.build(story)
+    doc.build(story, onFirstPage=_draw_page_footer, onLaterPages=_draw_page_footer)
     return buf.getvalue()

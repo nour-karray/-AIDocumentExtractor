@@ -8,6 +8,7 @@ import csv
 import json
 import os
 import re
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
@@ -36,7 +37,18 @@ _easyocr_reader = None
 
 
 def _medical_easyocr_enabled() -> bool:
-    return os.getenv("MEDICAL_ENABLE_EASYOCR", "1").strip().lower() in ("1", "true", "yes", "on")
+    return os.getenv("MEDICAL_ENABLE_EASYOCR", "0").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _medical_fast_ocr_enabled() -> bool:
+    return os.getenv("MEDICAL_FAST_OCR", "1").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _medical_ocr_timeout_seconds() -> float:
+    try:
+        return max(float(os.getenv("MEDICAL_OCR_TIMEOUT_SECONDS", "4")), 1.0)
+    except ValueError:
+        return 4.0
 
 
 def _easyocr_text(gray_or_bin: np.ndarray) -> str:
@@ -77,6 +89,11 @@ def _medical_text_score(text: str) -> int:
         )
     ) * 2
     return score
+
+
+def _strip_accents(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value or "")
+    return "".join(ch for ch in normalized if not unicodedata.combining(ch))
 
 
 def _build_ocr_variants(gray: np.ndarray) -> List[np.ndarray]:
@@ -481,6 +498,7 @@ def _extract_resultats_from_tesseract_data(gray: np.ndarray) -> List[Dict[str, O
             config="--oem 3 --psm 6",
             lang="fra+eng",
             output_type=pytesseract.Output.DICT,
+            timeout=_medical_ocr_timeout_seconds(),
         )
     except Exception:
         return []
@@ -526,6 +544,227 @@ def _extract_resultats_from_tesseract_data(gray: np.ndarray) -> List[Dict[str, O
     return _post_clean_resultats(parsed)
 
 
+def _looks_like_result_number(text: str) -> bool:
+    txt = normalize_digits(text or "").strip().replace(",", ".")
+    return bool(re.fullmatch(r"[<>]?\d{1,4}(?:\.\d{1,3})?", txt))
+
+
+def _looks_like_reference_range(text: str) -> bool:
+    txt = normalize_digits(text or "").strip().replace(",", ".")
+    return bool(re.fullmatch(r"\d{1,4}(?:\.\d{1,3})?\s*(?:-|a|Ã )\s*\d{1,4}(?:\.\d{1,3})?", txt, re.I))
+
+
+def _normalize_reference_range_token(text: str) -> Optional[str]:
+    txt = normalize_digits(text or "").strip().replace(",", ".")
+    match = re.fullmatch(
+        r"(\d{1,4}(?:\.\d{1,3})?)\s*(?:-|a|Ã )\s*(\d{1,4}(?:\.\d{1,3})?)",
+        txt,
+        re.I,
+    )
+    if not match:
+        return None
+
+    def fix_number(raw: str) -> str:
+        if "." in raw:
+            return raw
+        if len(raw) == 3:
+            return f"{int(raw[:-2])}.{raw[-2:]}"
+        return raw
+
+    return f"{fix_number(match.group(1))}-{fix_number(match.group(2))}"
+
+
+def _clean_unit_token(text: str) -> Optional[str]:
+    txt = normalize_digits(text or "").strip()
+    txt = txt.replace("I", "l").replace("ı", "l").replace("1", "l")
+    txt = re.sub(r"\s+", "", txt)
+    low = _strip_accents(txt).lower()
+    low = low.replace("muı", "mui").replace("mul", "mui")
+    if re.fullmatch(r"g/?l", low):
+        return "g/l"
+    if re.fullmatch(r"mmol/?l", low):
+        return "mmol/l"
+    if re.fullmatch(r"m?ui/?l", low):
+        return "mUI/l"
+    if re.fullmatch(r"u?mol/?l", low):
+        return "umol/l"
+    if re.fullmatch(r"mg/?d?l", low):
+        return txt
+    if low in {"%", "g%", "ng/ml", "ui/l"}:
+        return txt
+    return None
+
+
+def _infer_unit_for_label(label: str) -> Optional[str]:
+    low = _strip_accents(label).lower()
+    if any(k in low for k in ("glycem", "cholesterol", "triglycer")):
+        return "g/l"
+    if "tsh" in low or "thyreostimuline" in low:
+        return "mUI/l"
+    return None
+
+
+def _table_label_from_text(text: str) -> Optional[str]:
+    compact = _strip_accents(text or "").lower()
+    compact = re.sub(r"[^a-z0-9/%\s]", " ", compact)
+    compact = re.sub(r"\s+", " ", compact).strip()
+    if not compact:
+        return None
+    if "glycem" in compact:
+        return "Glycemie a jeun"
+    if "thyreostimuline" in compact or re.search(r"\btsh\b", compact):
+        return "Thyreostimuline (TSH)"
+    if "cholesterol" in compact and "hdl" in compact:
+        return "Cholesterol HDL"
+    if "cholesterol" in compact and "ldl" in compact:
+        return "Cholesterol LDL"
+    if "cholesterol" in compact and "total" in compact and "hdl" not in compact:
+        return "Cholesterol total"
+    if "triglycer" in compact:
+        return "Triglycerides"
+    if "uree" in compact:
+        return "Uree"
+    if "creatinin" in compact:
+        return "Creatinine"
+    if re.search(r"\bcrp\b", compact):
+        return "CRP"
+    return None
+
+
+def _group_ocr_tokens_into_rows(tokens: List[Dict[str, object]], image_height: int) -> List[List[Dict[str, object]]]:
+    if not tokens:
+        return []
+    y_tol = max(14, int(image_height * 0.012))
+    rows: List[List[Dict[str, object]]] = []
+    for token in sorted(tokens, key=lambda t: (int(t["y"]), int(t["x"]))):
+        if not rows:
+            rows.append([token])
+            continue
+        prev_y = int(np.median([int(t["y"]) for t in rows[-1]]))
+        if abs(int(token["y"]) - prev_y) <= y_tol:
+            rows[-1].append(token)
+        else:
+            rows.append([token])
+    return [sorted(row, key=lambda t: int(t["x"])) for row in rows]
+
+
+def extract_result_rows_from_medical_ocr_data(gray: np.ndarray) -> List[Dict[str, Optional[str]]]:
+    """
+    Rescue OCR par positions pour les tableaux de biologie.
+
+    Sur plusieurs scans, Tesseract lit le nom de l'examen, la valeur et l'unite sur
+    des lignes legerement differentes. Cette passe utilise les coordonnees des mots
+    pour associer la colonne de resultat au libelle detecte.
+    """
+    try:
+        data = pytesseract.image_to_data(
+            gray,
+            config="--oem 3 --psm 6",
+            lang="fra+eng",
+            output_type=pytesseract.Output.DICT,
+            timeout=_medical_ocr_timeout_seconds(),
+        )
+    except Exception:
+        return []
+
+    height, width = gray.shape[:2]
+    tokens: List[Dict[str, object]] = []
+    for i, raw in enumerate(data.get("text", [])):
+        text = normalize_digits((raw or "").strip())
+        if not text:
+            continue
+        try:
+            conf = float(data["conf"][i])
+        except Exception:
+            conf = -1.0
+        if conf < -1:
+            continue
+        tokens.append(
+            {
+                "text": text,
+                "x": int(data["left"][i]),
+                "y": int(data["top"][i]),
+                "w": int(data["width"][i]),
+                "h": int(data["height"][i]),
+                "conf": conf,
+            }
+        )
+
+    rows = _group_ocr_tokens_into_rows(tokens, height)
+    label_rows: list[tuple[str, int, str]] = []
+    for row in rows:
+        row_text = " ".join(str(t["text"]) for t in row)
+        label = _table_label_from_text(row_text)
+        if label:
+            label_rows.append((label, int(np.median([int(t["y"]) for t in row])), row_text))
+
+    out: list[dict[str, Optional[str]]] = []
+    seen: set[str] = set()
+    x_min = int(width * 0.30)
+    x_max = int(width * 0.68)
+
+    for label, y, row_text in label_rows:
+        if label in seen:
+            continue
+        window = 170 if "TSH" in label or "Thyreostimuline" in label else 72
+        nearby = [
+            t
+            for t in tokens
+            if abs(int(t["y"]) - y) <= window
+            and x_min <= int(t["x"]) <= x_max
+            and _looks_like_result_number(str(t["text"]))
+        ]
+        if not nearby:
+            continue
+        nearby.sort(key=lambda t: (abs(int(t["y"]) - y), int(t["x"])))
+        value_token = nearby[0]
+        value = normalize_digits(str(value_token["text"])).replace(",", ".").lstrip("<>")
+
+        unit = None
+        candidate_units = [
+            t
+            for t in tokens
+            if abs(int(t["y"]) - int(value_token["y"])) <= 18
+            and int(t["x"]) >= int(value_token["x"])
+            and int(t["x"]) <= int(value_token["x"]) + int(width * 0.16)
+        ]
+        for token in sorted(candidate_units, key=lambda t: int(t["x"])):
+            unit = _clean_unit_token(str(token["text"]))
+            if unit:
+                break
+        unit = unit or _infer_unit_for_label(label)
+
+        reference = None
+        ref_candidates = [
+            _normalize_reference_range_token(str(t["text"]))
+            for t in tokens
+            if int(t["x"]) >= int(width * 0.74)
+            and abs(int(t["y"]) - int(value_token["y"])) <= 45
+            and _looks_like_reference_range(str(t["text"]))
+        ]
+        if ref_candidates:
+            reference = next((ref for ref in ref_candidates if ref), None)
+
+        line_bits = [
+            str(t["text"])
+            for t in sorted(tokens, key=lambda t: (int(t["y"]), int(t["x"])))
+            if abs(int(t["y"]) - y) <= window
+            and int(t["x"]) <= int(width * 0.76)
+        ]
+        out.append(
+            {
+                "parametre": label,
+                "valeur": value,
+                "unite": unit,
+                "valeurs_normales": reference,
+                "ligne_complete": " ".join(line_bits)[:220] or row_text[:220],
+            }
+        )
+        seen.add(label)
+
+    return _post_clean_resultats(out)
+
+
 def _extract_laboratoire(full_text: str, header_text: str) -> Optional[str]:
     for block in (full_text, header_text):
         m = re.search(
@@ -548,9 +787,15 @@ def _extract_laboratoire(full_text: str, header_text: str) -> Optional[str]:
 
 
 def _ocr_medical(img: np.ndarray, config: str) -> str:
-    for lang in ("fra+eng", "eng+fra", "eng"):
+    langs = ("fra+eng", "eng") if _medical_fast_ocr_enabled() else ("fra+eng", "eng+fra", "eng")
+    for lang in langs:
         try:
-            return ocr_text(img, config=config, lang=lang)
+            return pytesseract.image_to_string(
+                img,
+                config=config,
+                lang=lang,
+                timeout=_medical_ocr_timeout_seconds(),
+            )
         except Exception:
             continue
     return ""
@@ -558,7 +803,11 @@ def _ocr_medical(img: np.ndarray, config: str) -> str:
 
 def _ocr_medical_best(img: np.ndarray, psm_values: Tuple[int, ...] = (6, 4, 11)) -> str:
     candidates: List[str] = []
-    for v in _build_ocr_variants(img):
+    variants = _build_ocr_variants(img)
+    if _medical_fast_ocr_enabled():
+        variants = variants[:2]
+        psm_values = tuple(psm_values[:2])
+    for v in variants:
         for psm in psm_values:
             txt = normalize_digits(_ocr_medical(v, f"--oem 3 --psm {psm}"))
             if txt.strip():
@@ -628,6 +877,39 @@ def extract_fields_from_medical(
 
     return MedicalAnalysisResult(
         file_name=image_path.name,
+        reference_dossier=ref,
+        date_prelevement=dp,
+        date_resultat=dr,
+        laboratoire=labo,
+        patient_nom=patient,
+        resultats_analyses=resultats,
+        confidence_note=conf,
+    )
+
+
+def extract_fields_from_medical_text(text: str, source_name: str = "document.pdf") -> MedicalAnalysisResult:
+    """Extraction medicale depuis le texte natif d'un PDF, sans OCR image."""
+    text_full = normalize_digits(text or "")
+    text_header = "\n".join(text_full.splitlines()[:30])
+    resultats = _extract_resultats_analyses(text_full, text_full)
+    dp, dr = _extract_dates_semantic(text_full)
+    ref = _extract_reference(text_full)
+    patient = _extract_patient(text_full)
+    labo = _extract_laboratoire(text_full, text_header)
+
+    n_res = len(resultats)
+    meta = sum(1 for x in (ref, dp, dr, labo, patient) if x)
+    if n_res >= 8 and meta >= 2:
+        conf = "high"
+    elif n_res >= 4 or (n_res >= 2 and meta >= 2):
+        conf = "high" if n_res >= 6 else "medium"
+    elif n_res >= 1 or meta >= 2:
+        conf = "medium"
+    else:
+        conf = "low"
+
+    return MedicalAnalysisResult(
+        file_name=source_name,
         reference_dossier=ref,
         date_prelevement=dp,
         date_resultat=dr,

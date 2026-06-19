@@ -89,7 +89,7 @@ export function ResultsPageClient() {
                     {detail.sourceFilename}
                   </div>
                   <div className="mt-1 text-[12px] text-[#8d95ae]">
-                    {detail.kindLabel} - {detail.method} - {detail.savedDate ?? "Date inconnue"}
+                    {detail.kindLabel} - {detail.method} - {detail.savedDate ?? "Date a verifier"}
                   </div>
                 </div>
                 <Badge tone={detail.status === "ok" ? "success" : "danger"}>
@@ -108,7 +108,7 @@ export function ResultsPageClient() {
                 </div>
                 <div className="rounded-[16px] border border-[rgba(139,147,172,0.14)] bg-[#fbfcff] px-4 py-3 text-[12px] dark:border-white/10 dark:bg-[#0f1525]">
                   <div className="font-semibold text-[#8d95ae]">Date d'extraction</div>
-                  <div className="mt-1 text-[#1b2440] dark:text-white">{detail.savedDate ?? "Date inconnue"}</div>
+                  <div className="mt-1 text-[#1b2440] dark:text-white">{detail.savedDate ?? "Date a verifier"}</div>
                 </div>
               </div>
 

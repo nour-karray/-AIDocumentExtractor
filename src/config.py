@@ -24,6 +24,13 @@ class AppConfig:
     # Historique des extractions (JSON par type, interface dédiée)
     extraction_history_dir: Path
     extraction_history_db_path: Path
+    # Authentification API optionnelle.
+    auth_enabled: bool
+    auth_username: str
+    auth_password_hash: Optional[str]
+    auth_password: Optional[str]
+    auth_token_secret: Optional[str]
+    auth_token_ttl_minutes: int
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -31,6 +38,16 @@ def _env_bool(name: str, default: bool) -> bool:
     if raw is None:
         return default
     return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_int(name: str, default: int) -> int:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return default
 
 
 def _default_project_root() -> Path:
@@ -87,5 +104,11 @@ def load_config(project_root: Optional[Path] = None) -> AppConfig:
         gemini_model=gemini_model,
         extraction_history_dir=history_dir,
         extraction_history_db_path=history_db_path,
+        auth_enabled=_env_bool("DOCUAI_AUTH_ENABLED", False),
+        auth_username=os.getenv("DOCUAI_AUTH_USERNAME", "admin"),
+        auth_password_hash=os.getenv("DOCUAI_AUTH_PASSWORD_HASH"),
+        auth_password=os.getenv("DOCUAI_AUTH_PASSWORD"),
+        auth_token_secret=os.getenv("DOCUAI_AUTH_TOKEN_SECRET"),
+        auth_token_ttl_minutes=max(5, _env_int("DOCUAI_AUTH_TOKEN_TTL_MINUTES", 480)),
     )
 

@@ -1,0 +1,29 @@
+{
+  "document_type": "receipt",
+  "store_name": "BENS INDEPENDENT GROCER SDN. BHD",
+  "date": "09/03/18",
+  "time": "",
+  "ticket_number": "",
+  "currency": "",
+  "items": [],
+  "total": "133.70",
+  "payment_method": "",
+  "address": "LOT 6, JALAN BATAI, PLAZA BATAI, DAMANSARA HEIGHTS 50490, KUALA LUMPUR",
+  "raw_text": "B.I.G.\nBEN'S INDEPENDENT GROCER\nBENS INDEPENDENT GROCER SDN. BHD\n(913144-A)\nLOT 6, JALAN BATAI,\nPLAZA BATAI, DAMANSARA HEIGHTS\n50490, KUALA LUMPUR\nT: 03-2093 7358 | F: 03-2093 7359\n(GST REG NO 000243941376)\nTAX INVOICE : BAT01201803090220\n09/03/18\nCASHIER : JORVILYN\n18:08:53\nEVIAN MINERAL WATER 6X1.25L\n3068320113784\n53.50*2\n107.00 S\nFRESH CUT HONEY JACKFRUIT PEELED 400G\n1430018201\n8.90*3\n26.70 Z\nITEM 2\nTOTAL WITH GST @ 6%\n133.70\nQTY\nROUNDING\n0.00\nTOTAL SAVING\n0.00\nTOTAL\n133.70\nTENDER\nCASH\n140.00\nCHANGE\n6.30\nGST ANALYSIS\nGOODS\nTAX AMOUNT\nS = 6%\n100.94\n6.06\nZ = 0%\n26.70\n0.00\nBIG.COM.MY\nFACEBOOK.COM/THEBIGGROUP\nEXCHANGE & REFUND MAY BE ALLOWED\nWITHIN 3 DAYS WITH ORIGINAL TAX INVOICE\nTHANK YOU, PLEASE COME AGAIN\nBAT01201803090220\n5",
+  "dataset": "sroie2019",
+  "dataset_split": "test",
+  "extraction_source": "sroie_ground_truth",
+  "extraction_quality": 100.0,
+  "_meta": {
+    "saved_at": "2026-06-07T12:32:54.972140+00:00",
+    "source_filename": "X51005444040.jpg",
+    "kind": "receipt_test",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "receipt",
+    "source_mime": "image/jpeg",
+    "source_size": 314051,
+    "stored_in_database": true,
+    "source_file_relative": "receipt_test\\20260607T123254Z_X51005444040.jpg"
+  }
+}

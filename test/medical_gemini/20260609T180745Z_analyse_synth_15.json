@@ -1,0 +1,37 @@
+{
+  "patient_name": "Patient Synth 15",
+  "doctor_name": "Dr Karim Saidi",
+  "date": "2026-03-18",
+  "analyses": [
+    {
+      "test_name": "Glycemie",
+      "value": "0.82",
+      "unit": "g/l"
+    },
+    {
+      "test_name": "Cholesterol total",
+      "value": "2.01",
+      "unit": "g/l"
+    },
+    {
+      "test_name": "Triglycerides",
+      "value": "1.02",
+      "unit": "g/l"
+    }
+  ],
+  "warnings": [],
+  "extraction_quality": 0.91,
+  "extraction_source": "gemini",
+  "_meta": {
+    "saved_at": "2026-06-09T18:07:45+00:00",
+    "source_filename": "analyse_synth_15.jpg",
+    "kind": "medical_gemini",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "medical_lab_report",
+    "source_mime": "image/jpeg",
+    "source_size": 176884,
+    "stored_in_database": true,
+    "source_file_relative": "medical_gemini\\20260609T180745Z_analyse_synth_15.jpg"
+  }
+}

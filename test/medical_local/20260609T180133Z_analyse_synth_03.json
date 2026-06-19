@@ -1,0 +1,133 @@
+{
+  "document_type": "medical_lab_report",
+  "lab_info": {
+    "lab_name": "Clinique El Amel",
+    "doctor_name": "Dr Karim Saidi"
+  },
+  "patient_info": {
+    "patient_name": "Patient Synth 03",
+    "patient_id": "PAT-260003",
+    "date_of_birth": null,
+    "sex": "F"
+  },
+  "document_metadata": {
+    "exam_number": "EX-7003",
+    "dossier_number": "DOS-6203",
+    "received_date": "2026-02-10",
+    "edited_date": "2026-02-11",
+    "request_date": null,
+    "sample_date": "2026-02-10",
+    "report_date": "2026-02-11",
+    "page_number": null,
+    "organization": "Clinique El Amel",
+    "document_type": "medical_lab_report"
+  },
+  "tests": [
+    {
+      "raw_test_name": "Glycemie",
+      "normalized_name": "glycemie",
+      "category": "biochemistry",
+      "value_text": "1.00",
+      "value": 1.0,
+      "secondary_value": null,
+      "previous_value": null,
+      "unit": "g/l",
+      "reference_range": {
+        "raw_text": "0.70 - 1.10"
+      },
+      "status": "normal",
+      "raw_line": "Glycemie 1.00 g/l 0.70 - 1.10",
+      "confidence": 0.92,
+      "notes": null
+    },
+    {
+      "raw_test_name": "Cholesterol total",
+      "normalized_name": "cholesterol_total",
+      "category": "biochemistry",
+      "value_text": "2.01",
+      "value": 2.01,
+      "secondary_value": null,
+      "previous_value": null,
+      "unit": "g/l",
+      "reference_range": {
+        "raw_text": "1.50 - 2.00"
+      },
+      "status": "normal",
+      "raw_line": "Cholesterol total 2.01 g/l 1.50 - 2.00",
+      "confidence": 0.92,
+      "notes": null
+    },
+    {
+      "raw_test_name": "Triglycerides",
+      "normalized_name": "triglycerides",
+      "category": "biochemistry",
+      "value_text": "1.02",
+      "value": 1.02,
+      "secondary_value": null,
+      "previous_value": null,
+      "unit": "g/l",
+      "reference_range": {
+        "raw_text": "0.40 - 1.50"
+      },
+      "status": "normal",
+      "raw_line": "Triglycerides 1.02 g/l 0.40 - 1.50",
+      "confidence": 0.92,
+      "notes": null
+    },
+    {
+      "raw_test_name": "Creatinine",
+      "normalized_name": "creatinine",
+      "category": "biochemistry",
+      "value_text": "9.5",
+      "value": 9.5,
+      "secondary_value": null,
+      "previous_value": null,
+      "unit": "mg/l",
+      "reference_range": {
+        "raw_text": "6.0 - 13.0"
+      },
+      "status": "normal",
+      "raw_line": "Creatinine 9.5 mg/l 6.0 - 13.0",
+      "confidence": 0.92,
+      "notes": null
+    },
+    {
+      "raw_test_name": "TSH",
+      "normalized_name": "tsh",
+      "category": "biochemistry",
+      "value_text": "2.36",
+      "value": 2.36,
+      "secondary_value": null,
+      "previous_value": null,
+      "unit": "uUI/ml",
+      "reference_range": {
+        "raw_text": "0.27 - 4.20"
+      },
+      "status": "normal",
+      "raw_line": "TSH 2.36 uUI/ml 0.27 - 4.20",
+      "confidence": 0.92,
+      "notes": null
+    }
+  ],
+  "warnings": [],
+  "raw_text": "ANALYSE MEDICALE\nClinique El Amel\nMedecin Dr Karim Saidi\nPatient Patient Synth 03\nCode patient PAT-260003\nDossier DOS-6203\nDate reception 2026-02-10\nGlycemie 1.00 g/l 0.70 - 1.10\nCholesterol total 2.01 g/l 1.50 - 2.00\nTriglycerides 1.02 g/l 0.40 - 1.50\nCreatinine 9.5 mg/l 6.0 - 13.0\nTSH 2.36 uUI/ml 0.27 - 4.20",
+  "extraction_source": "hybrid_local_fast_medical_ocr",
+  "local_pipeline": {
+    "architecture": "Pretraitement -> OCR medical rapide -> JSON structure",
+    "content_source": "synthetic_test_image",
+    "qwen_used": true,
+    "reason": "Donnees generees pour test."
+  },
+  "_meta": {
+    "saved_at": "2026-06-09T18:01:33+00:00",
+    "source_filename": "analyse_synth_03.jpg",
+    "kind": "medical_local",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "medical_lab_report",
+    "source_mime": "image/jpeg",
+    "source_size": 176688,
+    "stored_in_database": true,
+    "source_file_relative": "medical_local\\20260609T180133Z_analyse_synth_03.jpg"
+  }
+}

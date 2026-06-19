@@ -1,0 +1,29 @@
+{
+  "document_type": "receipt",
+  "store_name": "MONOPRIX",
+  "date": "2026-03-16",
+  "time": "",
+  "ticket_number": "TKT20260613",
+  "currency": "TND",
+  "items": [],
+  "total": "41.80",
+  "payment_method": "",
+  "address": "Rue de Marseille, Tunis",
+  "raw_text": "MONOPRIX\nRue de Marseille, Tunis\nTicket No TKT20260613\nDate 2026-03-16\nRiz 2 4.65 9.30\nPates 3 6.95 20.85\nFromage 1 9.25 9.25\nHuile 2 1.20 2.40\nTOTAL 41.80\nCASH",
+  "dataset": "synthetic_docuai",
+  "dataset_split": "test",
+  "extraction_source": "sroie_ground_truth",
+  "extraction_quality": 100.0,
+  "_meta": {
+    "saved_at": "2026-06-09T18:27:23+00:00",
+    "source_filename": "ticket_synth_13.jpg",
+    "kind": "receipt_test",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "receipt",
+    "source_mime": "image/jpeg",
+    "source_size": 159701,
+    "stored_in_database": true,
+    "source_file_relative": "receipt_test\\20260609T182723Z_ticket_synth_13.jpg"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "file_name": "tmpdkgd9g7x.png",
+  "reference": "55671 442 1",
+  "montant_a_payer": "130,000",
+  "date_limite_paiement": "2025-07-31",
+  "periode_du": "2025-05-30",
+  "periode_au": "2025-06-29",
+  "coupon_reference_raw": "00005567144210",
+  "coupon_montant": "130,000",
+  "confidence_note": "high",
+  "warnings": [],
+  "extraction_quality": 0.88,
+  "extraction_source": "gemini",
+  "_meta": {
+    "saved_at": "2026-06-09T23:41:42.699169+00:00",
+    "source_filename": "3.png",
+    "kind": "steg_gemini",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "steg_invoice",
+    "source_mime": "image/png",
+    "source_size": 1591682,
+    "stored_in_database": true,
+    "source_file_relative": "steg_gemini\\20260609T234142Z_3.png",
+    "trashed_at": "2026-06-09T23:41:54.241053+00:00",
+    "original_relative_path": "steg_gemini\\20260609T234142Z_3.json"
+  }
+}

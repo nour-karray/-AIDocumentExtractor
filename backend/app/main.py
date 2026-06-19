@@ -5,13 +5,16 @@ import json
 import mimetypes
 import zipfile
 from datetime import date
+from functools import partial
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
+from starlette.concurrency import run_in_threadpool
 
+from backend.app.auth import LoginRequest, RegisterRequest, authenticate_login, register_user, require_auth
 from backend.app.core import (
     build_dashboard_payload,
     build_history_detail,
@@ -23,8 +26,11 @@ from backend.app.core import (
     find_history_entry,
     get_config,
     process_batch,
+    resolve_archived_source_blob,
     resolve_archived_source_path,
 )
+
+AuthUser = Annotated[dict[str, str], Depends(require_auth)]
 
 app = FastAPI(
     title="DocuAI API",
@@ -60,28 +66,39 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.post("/api/auth/login")
+def auth_login(payload: LoginRequest) -> dict:
+    return authenticate_login(payload).model_dump()
+
+
+@app.post("/api/auth/register")
+def auth_register(payload: RegisterRequest) -> dict:
+    return register_user(payload).model_dump()
+
+
+@app.get("/api/auth/me")
+def auth_me(user: AuthUser) -> dict:
+    return {"user": {"username": user["username"]}, "mode": user["mode"]}
+
+
 @app.get("/api/meta")
 def meta() -> dict:
     return build_meta_payload(get_config())
 
 
 @app.get("/api/dashboard")
-def dashboard() -> dict:
-    return build_dashboard_payload(get_config())
-
-
-@app.get("/api/analyses")
-def analyses() -> dict:
+def dashboard(_user: AuthUser) -> dict:
     return build_dashboard_payload(get_config())
 
 
 @app.get("/api/models")
-def models() -> dict:
+def models(_user: AuthUser) -> dict:
     return build_models_payload(get_config())
 
 
 @app.get("/api/history")
 def history(
+    _user: AuthUser,
     kind: str = "",
     search: str = "",
     typeQuery: str = "",
@@ -104,6 +121,7 @@ def history(
 
 @app.get("/api/history/export/zip")
 def history_export_zip(
+    _user: AuthUser,
     entryKey: Annotated[list[str], Query(alias="entryKey")] = [],
 ) -> Response:
     if not entryKey:
@@ -135,7 +153,7 @@ def history_export_zip(
 
 
 @app.get("/api/history/{entry_key}")
-def history_detail(entry_key: str) -> dict:
+def history_detail(entry_key: str, _user: AuthUser) -> dict:
     cfg = get_config()
     entry = find_history_entry(cfg, entry_key)
     if entry is None:
@@ -144,7 +162,7 @@ def history_detail(entry_key: str) -> dict:
 
 
 @app.delete("/api/history/{entry_key}")
-def history_delete(entry_key: str) -> dict[str, str]:
+def history_delete(entry_key: str, _user: AuthUser) -> dict[str, str]:
     ok, message = delete_entry_by_key(get_config(), entry_key)
     if not ok:
         raise HTTPException(status_code=404, detail=message)
@@ -152,17 +170,20 @@ def history_delete(entry_key: str) -> dict[str, str]:
 
 
 @app.get("/api/history/{entry_key}/report.pdf")
-def history_report(entry_key: str) -> Response:
+def history_report(entry_key: str, _user: AuthUser) -> Response:
     cfg = get_config()
     entry = find_history_entry(cfg, entry_key)
     if entry is None:
         raise HTTPException(status_code=404, detail="Entree introuvable.")
     pdf_bytes = build_report_for_entry(cfg, entry)
-    return Response(content=pdf_bytes, media_type="application/pdf")
+    stem = Path(str(entry.get("source_filename") or "document")).stem or "document"
+    stem = stem.replace('"', "_").replace("\\", "_").replace("/", "_")
+    headers = {"Content-Disposition": f'attachment; filename="DOCEXTRACT_{stem}.pdf"'}
+    return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
 
 
 @app.get("/api/history/{entry_key}/source")
-def history_source(entry_key: str):
+def history_source(entry_key: str, _user: AuthUser):
     cfg = get_config()
     entry = find_history_entry(cfg, entry_key)
     if entry is None:
@@ -170,13 +191,17 @@ def history_source(entry_key: str):
     payload = build_history_detail(cfg, entry).get("payload")
     source_path = resolve_archived_source_path(entry, cfg, payload if isinstance(payload, dict) else None)
     if source_path is None:
+        source_blob = resolve_archived_source_blob(cfg, entry)
+        if source_blob is not None:
+            content, media_type = source_blob
+            return Response(content=content, media_type=media_type)
         raise HTTPException(status_code=404, detail="Source archivee indisponible.")
     media_type, _ = mimetypes.guess_type(str(source_path))
     return FileResponse(path=source_path, media_type=media_type or "application/octet-stream")
 
 
 @app.get("/api/results/latest")
-def latest_result():
+def latest_result(_user: AuthUser):
     cfg = get_config()
     history = build_history_list_payload(cfg, page=1, page_size=1)
     items = history.get("items") if isinstance(history.get("items"), list) else []
@@ -191,10 +216,13 @@ def latest_result():
 @app.post("/api/extractions")
 async def extractions(
     files: Annotated[list[UploadFile], File(...)],
+    _user: AuthUser,
     mode: Annotated[str, Form()] = "auto",
-    method: Annotated[str, Form()] = "gemini",
+    method: Annotated[str, Form()] = "local",
     geminiApiKey: Annotated[str | None, Form()] = None,
     geminiModel: Annotated[str | None, Form()] = None,
+    ollamaHost: Annotated[str | None, Form()] = None,
+    localModel: Annotated[str | None, Form()] = None,
     retries: Annotated[int, Form()] = 5,
     retryDelay: Annotated[float, Form()] = 2.0,
     originsJson: Annotated[str | None, Form()] = None,
@@ -222,13 +250,18 @@ async def extractions(
             }
         )
 
-    return process_batch(
-        get_config(),
-        files=payload_files,
-        mode=mode,
-        extraction_method=method,
-        gemini_api_key=geminiApiKey,
-        gemini_model=geminiModel,
-        retries=retries,
-        retry_delay=retryDelay,
+    return await run_in_threadpool(
+        partial(
+            process_batch,
+            get_config(),
+            files=payload_files,
+            mode=mode,
+            extraction_method=method,
+            gemini_api_key=geminiApiKey,
+            gemini_model=geminiModel,
+            ollama_host=ollamaHost,
+            local_model=localModel,
+            retries=retries,
+            retry_delay=retryDelay,
+        )
     )

@@ -1,7 +1,0 @@
-# Configuration Streamlit du projet — voir :
-# https://docs.streamlit.io/develop/api-reference/configuration/config.toml
-
-[client]
-# Masque le bouton / flux « Deploy » et les autres options développeur
-# (menu en haut à droite). Évite la fenêtre « Deploy this app using… ».
-toolbarMode = "viewer"

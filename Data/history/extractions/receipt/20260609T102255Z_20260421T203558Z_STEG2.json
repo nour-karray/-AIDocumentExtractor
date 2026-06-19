@@ -1,0 +1,80 @@
+{
+  "store_name": "Société Tunisienne de l'Electricité et du Gaz",
+  "date": "2022-11-04",
+  "time": null,
+  "ticket_number": "000069215474111",
+  "currency": "DINARS",
+  "items": [
+    {
+      "description": "Electricité",
+      "quantity": "85",
+      "unit_price": "0.176",
+      "line_total": "14.960"
+    },
+    {
+      "description": "Redevances Fixes (5) ECLAIRAGE",
+      "quantity": null,
+      "unit_price": "0.700",
+      "line_total": "9.800"
+    },
+    {
+      "description": "Gaz",
+      "quantity": "12",
+      "unit_price": "0.231",
+      "line_total": "2.772"
+    },
+    {
+      "description": "Redevances Fixes (5) GAZ-NATUR",
+      "quantity": null,
+      "unit_price": "0.150",
+      "line_total": "1.500"
+    },
+    {
+      "description": "Contribution CL",
+      "quantity": "5",
+      "unit_price": "0.425",
+      "line_total": null
+    },
+    {
+      "description": "Contribution RTT",
+      "quantity": null,
+      "unit_price": "0.850",
+      "line_total": null
+    },
+    {
+      "description": "FTE (Electricité)",
+      "quantity": "1",
+      "unit_price": "0.085",
+      "line_total": null
+    },
+    {
+      "description": "FTE (Gaz)",
+      "quantity": null,
+      "unit_price": "2.4",
+      "line_total": null
+    },
+    {
+      "description": "TVA",
+      "quantity": null,
+      "unit_price": null,
+      "line_total": "4.619"
+    }
+  ],
+  "total": "35.000",
+  "payment_method": null,
+  "warnings": [],
+  "extraction_quality": 1.0,
+  "extraction_source": "gemini",
+  "_meta": {
+    "saved_at": "2026-06-09T10:22:55.493564+00:00",
+    "source_filename": "20260421T203558Z_STEG2.png",
+    "kind": "receipt",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "receipt",
+    "source_mime": "image/png",
+    "source_size": 455954,
+    "stored_in_database": true,
+    "source_file_relative": "receipt\\20260609T102255Z_20260421T203558Z_STEG2.png"
+  }
+}

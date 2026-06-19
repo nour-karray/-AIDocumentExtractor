@@ -1,0 +1,52 @@
+{
+  "document_type": "steg_invoice",
+  "reference": "747268800",
+  "numero_compteur": null,
+  "date_facture": null,
+  "montant_a_payer": "74.290",
+  "date_limite_paiement": null,
+  "periode_du": null,
+  "periode_au": null,
+  "coupon_reference_raw": "0000065747268800",
+  "coupon_montant": "74.290",
+  "confidence_note": "medium",
+  "raw_text": "# OCR fallback image\n\n= 4 |\nBS 6 cacy ssa 44) SY Lociété Tunisienne $ dd galt oe =\nBN gai pny «aS! $21 OH J Nef Electricitéet duGaz jLatlg 4s aul cl\nSF fcahh gyipeh al Ot Ae a\n== 1 ster@steg.com.tn we\n3) webma: ia!\n= uc.dmahres@steg:com.tn ara la eS\nWe ates 747268800 exo FACTURE rah ee\nSLIM B HED! DERBEL ; me =\nCITE ENNOUR N7 Dépannage 74,290,200 / 71.239.222 Sean =\n3060 MAHARES. District  74.290.000 eyed P SHipee =\n‘Type de Facture Digi 5508 ayai =\nDOMESTIQUE ue =a\nros ISSUE awe BRE\nUSAGE :10 2215800426200 RIB/RIP. aia ae =\n251002 11 65 13090 el =\nCONSOM are & SERVICES loasilg eee =|\nsbildua) <Littwbelill Bangle syadllsmall 435 Index stall pla! 7alsalls33 | ibellés ob =|\naxa caleba Brie aia LA yaiylase Sigua bil = —=|\n0,000 646-9000 3t . f VEN ao |\nSemel) O. ceuESD) > =|\n7 65,472 176 62 372 006, =|\n<a)\n19 16,800 700 oo 64 2-208 cee! =\njle =\nes\nRedevances fixes gill pall (5) S\n=\n22,949 38 872,062 895,011 x8 pe E\n204,431 17 3.475,327 3.679,758 Ziipaiblp tha :\nil gas 7 Wlcdl 5a 91 Unshaen pip tad) (he GMT Cypall Alga cis sas ola |\noa aera ge) a aR TSS CNN Maa UT Foran emmvioea Stes evens cn] TOTALSERVICES  Gilaaill egoro (13) BA\na 309,652 ‘TOTAL CONSOMMATION ET SERVICES Ciloadllg aim egora (14)\n324,867 MONTANT TOTAL loall glial 6) [FF Eee se TAXES /.ilelaull\nas oe i 5 I _ 1,860 5 372 Contribution CL ajlalhcilcloailaoaluots\n~ aD - 3,720 Contribution RTT jalilig aes) pains ~\n4 Paiements précédents aSjLu leg a8) a 5 372 aren LV REZYRIEIMILALII| Goat\nbs -_ a ul w 4\n3 tglisoll plioll as) Stine ¥ Ey |\n2 1169,000 Montant & payer 000» tn gsi pZeut pL rill] 39 i |\non ea ee ae\nauypll o6ulg alana ela] alley wits 3\nPoste Bulletin de vi nent Po {\noaiarat eases aes -\ni\" et\nFat i Ee ie EP\n} AINA o B ald\n1 ovo: | a 169,000 | 0000065747268800 | em\nCode Montant —— R6férenc Toile a eg zi |\nSR ch a = —— a F",
+  "extraction_source": "hybrid_local_fast_steg_ocr",
+  "warnings": [
+    {
+      "code": "FAST_STEG_OCR",
+      "message": "Facture STEG image: OCR rapide utilise pour eviter une attente longue de Qwen/Ollama."
+    }
+  ],
+  "local_pipeline": {
+    "architecture": "Pretraitement -> OCR rapide STEG -> JSON structure",
+    "content_source": "tesseract_fast_text",
+    "qwen_used": false,
+    "reason": "Retour rapide pour eviter le timeout Qwen 7B sur image STEG.",
+    "fallback_used": true,
+    "fallback_quality": {
+      "score": 100.0,
+      "usable": true,
+      "characters": 1816,
+      "words": 358,
+      "lines": 51,
+      "tableLines": 2,
+      "digitCount": 256,
+      "noiseRatio": 0.0,
+      "reasons": []
+    },
+    "docling_error": "Image/scan: OCR fallback direct pour eviter un traitement Docling trop long. PaddleOCR: PaddleOCR a depasse 4 secondes; fallback OCR local rapide utilise."
+  },
+  "_meta": {
+    "saved_at": "2026-06-07T21:07:52.926299+00:00",
+    "source_filename": "steg6.jpg",
+    "kind": "steg_local",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "steg_invoice",
+    "source_mime": "image/jpeg",
+    "source_size": 313398,
+    "stored_in_database": true,
+    "source_file_relative": "steg_local\\20260607T210752Z_steg6.jpg"
+  }
+}

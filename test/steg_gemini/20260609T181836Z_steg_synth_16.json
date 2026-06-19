@@ -1,0 +1,28 @@
+{
+  "file_name": "tmp_synth_steg_16.jpg",
+  "reference": "52016 216 6",
+  "numero_compteur": "810464",
+  "date_facture": "2026-03-31",
+  "montant_a_payer": "187,696",
+  "date_limite_paiement": "2026-04-25",
+  "periode_du": "2026-01-30",
+  "periode_au": "2026-03-29",
+  "coupon_reference_raw": "000006552016216600187696",
+  "coupon_montant": "187,696",
+  "confidence_note": "high",
+  "warnings": [],
+  "extraction_quality": 0.9,
+  "extraction_source": "gemini",
+  "_meta": {
+    "saved_at": "2026-06-09T18:18:36+00:00",
+    "source_filename": "steg_synth_16.jpg",
+    "kind": "steg_gemini",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "steg_invoice",
+    "source_mime": "image/jpeg",
+    "source_size": 188853,
+    "stored_in_database": true,
+    "source_file_relative": "steg_gemini\\20260609T181836Z_steg_synth_16.jpg"
+  }
+}

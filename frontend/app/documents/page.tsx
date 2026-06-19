@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Search, Trash2, X } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Download, FileText, Search, ShieldCheck, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/page-header";
@@ -10,13 +10,119 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { deleteHistoryEntry, fetchHistory, fetchHistoryDetail, resolveApiUrl } from "@/lib/api";
-import type { HistoryDetail, HistoryListPayload } from "@/lib/types";
+import {
+  deleteHistoryEntry,
+  downloadHistoryReport,
+  downloadHistoryZip,
+  fetchHistory,
+  fetchHistoryDetail,
+  resolveApiUrl
+} from "@/lib/api";
+import { readSessionValue, storageKeys } from "@/lib/storage";
+import type { HistoryDetail, HistoryItem, HistoryListPayload } from "@/lib/types";
+
+const documentTypeFilters = [
+  { value: "steg", label: "Facture STEG", query: "facture steg" },
+  { value: "medical", label: "Analyse medicale", query: "analyse medicale" },
+  { value: "receipt", label: "Ticket de caisse", query: "ticket" },
+  { value: "supplier", label: "Facture fournisseur", query: "facture fournisseur" },
+] as const;
+
+function typeFilterQuery(typeFilter: string, search: string) {
+  const selected = documentTypeFilters.find((item) => item.value === typeFilter)?.query ?? "";
+  return selected || search.trim();
+}
+
+function isImageSource(filename: string) {
+  return /\.(png|jpe?g|webp|gif|bmp|tiff?)$/i.test(filename);
+}
+
+function qualityLabel(score: number | null) {
+  if (score === null || Number.isNaN(score)) {
+    return "Score qualite N/A";
+  }
+  if (score < 50) {
+    return `A verifier ${score.toFixed(1)}%`;
+  }
+  if (score < 75) {
+    return `Correct ${score.toFixed(1)}%`;
+  }
+  return `Fiable ${score.toFixed(1)}%`;
+}
+
+function qualityClass(score: number | null) {
+  if (score === null) {
+    return "text-[#8d95ae]";
+  }
+  if (score < 50) {
+    return "text-[#df4d64]";
+  }
+  if (score < 75) {
+    return "text-[#b88607]";
+  }
+  return "text-[#2eb764]";
+}
+
+function SourceThumbnail({ item }: { item: HistoryItem }) {
+  const [previewUrl, setPreviewUrl] = useState("");
+
+  useEffect(() => {
+    if (!item.sourceUrl || !isImageSource(item.sourceFilename)) {
+      setPreviewUrl("");
+      return;
+    }
+
+    let alive = true;
+    let objectUrl = "";
+    const token = readSessionValue(storageKeys.authToken, "");
+
+    fetch(resolveApiUrl(item.sourceUrl), {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      cache: "no-store"
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        return response.blob();
+      })
+      .then((blob) => {
+        if (!alive) {
+          return;
+        }
+        objectUrl = URL.createObjectURL(blob);
+        setPreviewUrl(objectUrl);
+      })
+      .catch(() => {
+        if (alive) {
+          setPreviewUrl("");
+        }
+      });
+
+    return () => {
+      alive = false;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [item.sourceFilename, item.sourceUrl]);
+
+  return (
+    <div className="flex h-14 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[rgba(139,147,172,0.14)] bg-[#eef2fb] dark:border-white/10 dark:bg-[#0b1020]">
+      {previewUrl ? (
+        <img alt={item.sourceFilename} className="h-full w-full object-cover" src={previewUrl} />
+      ) : (
+        <FileText className="h-6 w-6 text-[#7c4dff]" />
+      )}
+    </div>
+  );
+}
 
 export default function DocumentsPage() {
   const [requestedEntryKey, setRequestedEntryKey] = useState("");
   const [search, setSearch] = useState("");
-  const [kindFilter, setKindFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [page, setPage] = useState(1);
   const [data, setData] = useState<HistoryListPayload | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -25,28 +131,29 @@ export default function DocumentsPage() {
   const [focusedDetail, setFocusedDetail] = useState<HistoryDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
-
     const params = new URLSearchParams(window.location.search);
     setRequestedEntryKey(params.get("entry") ?? "");
   }, []);
 
   useEffect(() => {
-    const params = new URLSearchParams({ page: "1", pageSize: "12" });
-    if (search.trim()) {
-      params.set("search", search.trim());
-    }
-    if (kindFilter) {
-      params.set("kind", kindFilter);
+    const params = new URLSearchParams({ page: String(page), pageSize: "12" });
+    const query = typeFilterQuery(typeFilter, search);
+    if (query) {
+      params.set("typeQuery", query);
     }
 
     fetchHistory(params)
       .then((payload) => {
         setData(payload);
+        if (payload.pagination.page !== page) {
+          setPage(payload.pagination.page);
+        }
         setSelectedEntryKeys((current) =>
           current.filter((entryKey) => payload.items.some((item) => item.entryKey === entryKey))
         );
@@ -58,7 +165,7 @@ export default function DocumentsPage() {
         }
       })
       .catch((err: Error) => setError(err.message));
-  }, [focusedEntryKey, kindFilter, search]);
+  }, [focusedEntryKey, page, refreshKey, search, typeFilter]);
 
   const visibleEntryKeys = useMemo(
     () => data?.items.map((item) => item.entryKey) ?? [],
@@ -70,6 +177,8 @@ export default function DocumentsPage() {
 
   const selectedItems =
     data?.items.filter((item) => selectedEntryKeys.includes(item.entryKey)) ?? [];
+  const selectedTypeLabel =
+    documentTypeFilters.find((item) => item.value === typeFilter)?.label ?? "Tous les types";
 
   const toggleEntry = (entryKey: string) => {
     setSelectedEntryKeys((current) =>
@@ -89,7 +198,6 @@ export default function DocumentsPage() {
       if (allVisibleSelected) {
         return current.filter((entryKey) => !visibleEntryKeys.includes(entryKey));
       }
-
       return Array.from(new Set([...current, ...visibleEntryKeys]));
     });
     setNotice("");
@@ -101,9 +209,7 @@ export default function DocumentsPage() {
     setDetailError("");
     setFocusedDetail(null);
     fetchHistoryDetail(entryKey)
-      .then((payload) => {
-        setFocusedDetail(payload);
-      })
+      .then(setFocusedDetail)
       .catch((err: Error) => {
         setFocusedDetail(null);
         setDetailError(err.message);
@@ -115,7 +221,6 @@ export default function DocumentsPage() {
     if (!requestedEntryKey || requestedEntryKey === focusedEntryKey) {
       return;
     }
-
     openDocumentDetail(requestedEntryKey);
   }, [focusedEntryKey, requestedEntryKey]);
 
@@ -156,41 +261,73 @@ export default function DocumentsPage() {
     };
   }, [isDetailModalOpen]);
 
-  const exportSelectedDocuments = () => {
+  const sourceFilenameForEntry = (entryKey: string) =>
+    data?.items.find((item) => item.entryKey === entryKey)?.sourceFilename ??
+    (focusedDetail?.entryKey === entryKey ? focusedDetail.sourceFilename : "document");
+
+  const exportSelectedDocuments = async () => {
     if (selectedEntryKeys.length > 1) {
-      const params = new URLSearchParams();
-      selectedEntryKeys.forEach((entryKey) => params.append("entryKey", entryKey));
-      window.open(resolveApiUrl(`/api/history/export/zip?${params.toString()}`), "_blank", "noopener,noreferrer");
-      setNotice(`${selectedEntryKeys.length} document(s) envoye(s) vers l'export ZIP.`);
+      try {
+        await downloadHistoryZip(selectedEntryKeys);
+        setNotice(`${selectedEntryKeys.length} document(s) exporte(s) en ZIP.`);
+      } catch (err) {
+        setNotice(err instanceof Error ? err.message : "Export ZIP impossible.");
+      }
       return;
     }
 
     const singleEntryKey = selectedEntryKeys[0] ?? focusedEntryKey;
     if (singleEntryKey) {
-      window.open(
-        resolveApiUrl(`/api/history/${singleEntryKey}/report.pdf`),
-        "_blank",
-        "noopener,noreferrer"
-      );
-      setNotice("Le rapport PDF du document selectionne a ete ouvert.");
+      try {
+        await downloadHistoryReport(singleEntryKey, sourceFilenameForEntry(singleEntryKey));
+        setNotice("Le rapport PDF du document selectionne a ete telecharge.");
+      } catch (err) {
+        setNotice(err instanceof Error ? err.message : "Export PDF impossible.");
+      }
       return;
     }
 
     setNotice("Clique sur un document pour afficher son detail, ou coche plusieurs documents pour un export ZIP.");
   };
 
-  const exportFocusedDocument = () => {
+  const exportFocusedDocument = async () => {
     if (!focusedEntryKey) {
       setNotice("Clique d'abord sur un document pour afficher son detail.");
       return;
     }
 
-    window.open(
-      resolveApiUrl(`/api/history/${focusedEntryKey}/report.pdf`),
-      "_blank",
-      "noopener,noreferrer"
-    );
-    setNotice("Le rapport PDF du document affiche a ete ouvert.");
+    try {
+      await downloadHistoryReport(focusedEntryKey, sourceFilenameForEntry(focusedEntryKey));
+      setNotice("Le rapport PDF du document affiche a ete telecharge.");
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : "Export PDF impossible.");
+    }
+  };
+
+  const trashSelectedDocuments = async () => {
+    if (!selectedEntryKeys.length) {
+      setNotice("Coche un ou plusieurs documents a supprimer.");
+      return;
+    }
+
+    try {
+      for (const entryKey of selectedEntryKeys) {
+        await deleteHistoryEntry(entryKey);
+      }
+      const deletedCount = selectedEntryKeys.length;
+      setSelectedEntryKeys([]);
+      if (selectedEntryKeys.includes(focusedEntryKey)) {
+        closeDocumentDetail();
+      }
+      setNotice(
+        deletedCount > 1
+          ? `${deletedCount} documents deplaces vers la corbeille.`
+          : "Document deplace vers la corbeille."
+      );
+      setRefreshKey((current) => current + 1);
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : "Suppression impossible.");
+    }
   };
 
   const trashFocusedDocument = async () => {
@@ -204,6 +341,7 @@ export default function DocumentsPage() {
       setSelectedEntryKeys((current) => current.filter((entryKey) => entryKey !== focusedEntryKey));
       closeDocumentDetail();
       setNotice(response.message);
+      setRefreshKey((current) => current + 1);
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Mise en corbeille impossible.");
     }
@@ -226,36 +364,49 @@ export default function DocumentsPage() {
                 value={search}
                 onChange={(event) => {
                   setSearch(event.target.value);
+                  setPage(1);
                   setNotice("");
                 }}
-                placeholder="Rechercher un document..."
+                placeholder="Rechercher par type..."
                 className="pl-9"
               />
             </div>
             <Select
               className="max-w-[220px]"
-              value={kindFilter}
+              value={typeFilter}
               onChange={(event) => {
-                setKindFilter(event.target.value);
+                setTypeFilter(event.target.value);
+                setPage(1);
                 setNotice("");
               }}
             >
               <option value="">Tous les types</option>
-              {data?.filters.availableKinds.map((kind) => (
+              {documentTypeFilters.map((kind) => (
                 <option key={kind.value} value={kind.value}>
                   {kind.label}
                 </option>
               ))}
             </Select>
           </div>
-          <Button variant="success" className="gap-2" onClick={exportSelectedDocuments}>
-            <Download className="h-4 w-4" />
-            {selectedEntryKeys.length > 1
-              ? "Exporter la selection"
-              : focusedEntryKey || selectedEntryKeys.length === 1
-                ? "Exporter le document"
-                : "Exporter"}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+            <Button
+              variant="danger"
+              className="gap-2"
+              onClick={trashSelectedDocuments}
+              disabled={!selectedEntryKeys.length}
+            >
+              <Trash2 className="h-4 w-4" />
+              {selectedEntryKeys.length > 1 ? "Supprimer la selection" : "Supprimer"}
+            </Button>
+            <Button variant="success" className="gap-2" onClick={exportSelectedDocuments}>
+              <Download className="h-4 w-4" />
+              {selectedEntryKeys.length > 1
+                ? "Exporter la selection"
+                : focusedEntryKey || selectedEntryKeys.length === 1
+                  ? "Exporter le document"
+                  : "Exporter"}
+            </Button>
+          </div>
         </div>
 
         {error ? (
@@ -268,18 +419,15 @@ export default function DocumentsPage() {
               <span>
                 {selectedItems.length
                   ? `${selectedItems.length} document(s) selectionne(s)`
-                  : "Clique sur un document pour ouvrir son detail en popup, ou coche plusieurs documents pour un export ZIP."}
+                  : "Recherche par type uniquement : Facture STEG, Analyse medicale, Ticket de caisse ou Facture fournisseur."}
               </span>
               <span>
-                Type filtre :{" "}
-                {kindFilter
-                  ? data.filters.availableKinds.find((kind) => kind.value === kindFilter)?.label ?? kindFilter
-                  : "Tous les types"}
+                Type filtre : {selectedTypeLabel}
               </span>
             </div>
 
             <div className="space-y-2">
-              <div className="grid grid-cols-[auto,minmax(0,1.4fr),auto,auto] gap-3 px-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8d95ae]">
+              <div className="grid grid-cols-[auto,70px,minmax(0,1fr),auto,auto] items-center gap-3 px-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8d95ae]">
                 <button
                   type="button"
                   onClick={toggleAllVisible}
@@ -288,6 +436,7 @@ export default function DocumentsPage() {
                 >
                   {allVisibleSelected ? <span className="h-2 w-2 rounded-sm bg-[#7c4dff]" /> : null}
                 </button>
+                <span />
                 <span>Document</span>
                 <span className="hidden xl:block">Date</span>
                 <span className="text-right">Statut</span>
@@ -309,7 +458,7 @@ export default function DocumentsPage() {
                         openDocumentDetail(item.entryKey);
                       }
                     }}
-                    className={`grid w-full grid-cols-[auto,minmax(0,1.4fr),auto,auto] items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition ${
+                    className={`grid w-full grid-cols-[auto,70px,minmax(0,1fr),auto,auto] items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition ${
                       focused
                         ? "border-[#cfdcff] bg-[#eef4ff] shadow-[0_8px_24px_rgba(81,108,201,0.08)] dark:border-[#29406f] dark:bg-[#132038]"
                         : checked
@@ -332,6 +481,8 @@ export default function DocumentsPage() {
                       </button>
                     </div>
 
+                    <SourceThumbnail item={item} />
+
                     <div className="min-w-0">
                       <div className="truncate font-semibold text-[#1b2440] dark:text-white">
                         {item.sourceFilename}
@@ -341,8 +492,11 @@ export default function DocumentsPage() {
                         <Badge tone={item.method.includes("Gemini") ? "purple" : "default"}>
                           {item.method}
                         </Badge>
-                        <span className="font-semibold text-[#2eb764]">
-                          {item.qualityScore !== null ? `${item.qualityScore.toFixed(1)}%` : "N/A"}
+                        <span
+                          className={`font-semibold ${qualityClass(item.qualityScore)}`}
+                          title="Score qualite: indique si les champs importants ont ete bien detectes."
+                        >
+                          {qualityLabel(item.qualityScore)}
                         </span>
                       </div>
                     </div>
@@ -361,12 +515,32 @@ export default function DocumentsPage() {
               })}
             </div>
 
-            <div className="flex items-center justify-end gap-2 text-[12px] text-[#8d95ae]">
-              <span>1</span>
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#f3efff] font-semibold text-[#7c4dff]">
+            <div className="flex flex-wrap items-center justify-end gap-2 text-[12px] text-[#8d95ae]">
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                disabled={data.pagination.page <= 1}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-[rgba(139,147,172,0.18)] bg-white transition hover:bg-[#f6f8ff] disabled:cursor-not-allowed disabled:opacity-45 dark:border-white/10 dark:bg-[#0f1525] dark:hover:bg-white/5"
+                title="Page precedente"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="flex h-8 min-w-8 items-center justify-center rounded-lg bg-[#f3efff] px-2 font-semibold text-[#7c4dff]">
                 {data.pagination.page}
               </span>
-              <span>{data.pagination.totalPages}</span>
+              <span>/ {data.pagination.totalPages}</span>
+              <button
+                type="button"
+                onClick={() =>
+                  setPage((current) => Math.min(data.pagination.totalPages, current + 1))
+                }
+                disabled={data.pagination.page >= data.pagination.totalPages}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-[rgba(139,147,172,0.18)] bg-white transition hover:bg-[#f6f8ff] disabled:cursor-not-allowed disabled:opacity-45 dark:border-white/10 dark:bg-[#0f1525] dark:hover:bg-white/5"
+                title="Page suivante"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              <span className="ml-2">{data.pagination.total} document(s)</span>
             </div>
             {notice ? <div className="text-[12px] text-[#7455f2] dark:text-[#c7b7ff]">{notice}</div> : null}
           </>
@@ -375,35 +549,40 @@ export default function DocumentsPage() {
 
       {isDetailModalOpen ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(16,22,37,0.42)] px-4 py-6 backdrop-blur-[2px]"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(12,18,32,0.58)] px-4 py-6 backdrop-blur-[5px]"
           onClick={closeDocumentDetail}
         >
           <div
-            className="max-h-[92vh] w-full max-w-[1400px] overflow-auto rounded-[28px] border border-[rgba(139,147,172,0.18)] bg-white p-5 shadow-[0_24px_80px_rgba(16,22,37,0.24)] dark:border-white/10 dark:bg-[#101625]"
+            className="max-h-[92vh] w-full max-w-[1380px] overflow-auto rounded-[26px] border border-[rgba(139,147,172,0.18)] bg-white p-4 shadow-[0_28px_90px_rgba(8,14,28,0.32)] dark:border-white/10 dark:bg-[#101625] md:p-5"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="text-[20px] font-bold text-[#1b2440] dark:text-white">
-                  Detail du document
+              <div className="flex min-w-0 items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#f1ebff] text-[#7c4dff] shadow-[0_10px_24px_rgba(124,77,255,0.12)] dark:bg-[#21183a]">
+                  <FileText className="h-5 w-5" />
                 </div>
-                <div className="mt-1 text-[12px] text-[#7a83a2] dark:text-[#aeb7d2]">
-                  Consulte le contenu extrait puis exporte directement le rapport du document.
+                <div className="min-w-0">
+                  <div className="text-[20px] font-bold text-[#071a3d] dark:text-white">
+                    Detail du document
+                  </div>
+                  <div className="mt-1 text-[12px] text-[#7a83a2] dark:text-[#aeb7d2]">
+                    Consulte le contenu extrait et les informations du document.
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="danger" className="gap-2" onClick={trashFocusedDocument}>
+                <Button variant="danger" size="sm" className="gap-2 rounded-xl" onClick={trashFocusedDocument}>
                   <Trash2 className="h-4 w-4" />
-                  Mettre a la corbeille
+                  Supprimer
                 </Button>
-                <Button variant="success" className="gap-2" onClick={exportFocusedDocument}>
+                <Button variant="success" size="sm" className="gap-2 rounded-xl" onClick={exportFocusedDocument}>
                   <Download className="h-4 w-4" />
                   Exporter ce document
                 </Button>
                 <button
                   type="button"
                   onClick={closeDocumentDetail}
-                  className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[rgba(139,147,172,0.18)] bg-[#fbfcff] text-[#5f6888] transition hover:bg-[#f3f6ff] dark:border-white/10 dark:bg-[#0f1525] dark:text-[#b7c1de] dark:hover:bg-[#151c30]"
+                  className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[rgba(139,147,172,0.18)] bg-[#fbfcff] text-[#5f6888] transition hover:bg-[#f3f6ff] dark:border-white/10 dark:bg-[#0f1525] dark:text-[#b7c1de] dark:hover:bg-[#151c30]"
                   title="Fermer"
                 >
                   <X className="h-5 w-5" />
@@ -419,18 +598,39 @@ export default function DocumentsPage() {
               <Card>Chargement du detail du document...</Card>
             ) : focusedDetail ? (
               <>
-                <div className="mb-4 grid gap-3 md:grid-cols-3">
-                  <div className="rounded-[16px] border border-[rgba(139,147,172,0.14)] bg-[#fbfcff] px-4 py-3 text-[12px] dark:border-white/10 dark:bg-[#0f1525]">
-                    <div className="font-semibold text-[#8d95ae]">Document</div>
-                    <div className="mt-1 text-[#1b2440] dark:text-white">{focusedDetail.sourceFilename}</div>
+                <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-[1.25fr,1.25fr,0.75fr]">
+                  <div className="flex min-w-0 items-center gap-3 rounded-[16px] border border-[rgba(139,147,172,0.14)] bg-[#fbfcff] px-4 py-3 text-[12px] shadow-[0_10px_28px_rgba(19,29,61,0.035)] dark:border-white/10 dark:bg-[#0f1525]">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f1ebff] text-[#7c4dff] dark:bg-[#21183a]">
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-[#8d95ae]">Document</div>
+                      <div className="mt-1 truncate font-semibold text-[#1b2440] dark:text-white">
+                        {focusedDetail.sourceFilename}
+                      </div>
+                    </div>
                   </div>
-                  <div className="rounded-[16px] border border-[rgba(139,147,172,0.14)] bg-[#fbfcff] px-4 py-3 text-[12px] dark:border-white/10 dark:bg-[#0f1525]">
-                    <div className="font-semibold text-[#8d95ae]">Type detecte</div>
-                    <div className="mt-1 text-[#1b2440] dark:text-white">{focusedDetail.kindLabel}</div>
+                  <div className="flex min-w-0 items-center gap-3 rounded-[16px] border border-[rgba(139,147,172,0.14)] bg-[#fbfcff] px-4 py-3 text-[12px] shadow-[0_10px_28px_rgba(19,29,61,0.035)] dark:border-white/10 dark:bg-[#0f1525]">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#edf3ff] text-[#3f6df6] dark:bg-[#182642]">
+                      <ShieldCheck className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-[#8d95ae]">Type detecte</div>
+                      <div className="mt-1 truncate font-semibold text-[#1b2440] dark:text-white">
+                        {focusedDetail.kindLabel}
+                      </div>
+                    </div>
                   </div>
-                  <div className="rounded-[16px] border border-[rgba(139,147,172,0.14)] bg-[#fbfcff] px-4 py-3 text-[12px] dark:border-white/10 dark:bg-[#0f1525]">
-                    <div className="font-semibold text-[#8d95ae]">Methode</div>
-                    <div className="mt-1 text-[#1b2440] dark:text-white">{focusedDetail.method}</div>
+                  <div className="flex min-w-0 items-center justify-between gap-3 rounded-[16px] border border-[rgba(139,147,172,0.14)] bg-[#fbfcff] px-4 py-3 text-[12px] shadow-[0_10px_28px_rgba(19,29,61,0.035)] dark:border-white/10 dark:bg-[#0f1525]">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-[#8d95ae]">Statut</div>
+                      <div className="mt-1">
+                        <Badge tone={focusedDetail.status === "ok" ? "success" : "danger"}>
+                          {focusedDetail.status === "ok" ? "Succes" : "Erreur"}
+                        </Badge>
+                      </div>
+                    </div>
+                    <CheckCircle2 className={`h-5 w-5 ${focusedDetail.status === "ok" ? "text-[#30c56f]" : "text-[#df4d64]"}`} />
                   </div>
                 </div>
                 <ResultDetail detail={focusedDetail} layout="stacked" />

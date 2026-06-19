@@ -1,0 +1,55 @@
+{
+  "document_type": "medical_lab_report",
+  "lab_info": {
+    "lab_name": "d'Analyses Medi a",
+    "doctor_name": null
+  },
+  "patient_info": {
+    "patient_name": "Kraiem Amer",
+    "patient_id": null,
+    "date_of_birth": null,
+    "sex": null
+  },
+  "document_metadata": {
+    "exam_number": null,
+    "dossier_number": "alyses Medi a l",
+    "sample_date": "2025-11-05",
+    "report_date": "2025-11-05",
+    "page_number": null,
+    "organization": null,
+    "source_file": "C:\\Users\\User\\AppData\\Local\\Temp\\tmpuk9ebg03.jpg",
+    "document_type": "medical_lab_report"
+  },
+  "tests": [],
+  "warnings": [
+    {
+      "code": "FAST_MEDICAL_OCR",
+      "message": "Extraction rapide utilisee pour eviter le blocage du pipeline local sur image medicale.",
+      "context": "C:\\Users\\User\\AppData\\Local\\Temp\\tmpuk9ebg03.jpg"
+    },
+    {
+      "code": "AUTO_FAST_OCR_FALLBACK",
+      "message": "Analyse medicale image: retour OCR structure rapide utilise pour eviter une attente longue de Qwen/Ollama."
+    }
+  ],
+  "raw_text": "4\nLaboratoire d'Analyses Medi a\nlédicales ¢ . OMe vas. S\nDr. Boubaker Sadok BENZINA ol Stell |\n MAHARES le : 05/11/2025 ee ——— RE\nRésultats d'analyses ae Dossier N°: 051125-032, | Pvtdu: Tos/i1/2035 1040\nCode Patrat 12-150 D |Nom: Mr KRAIEM AMER, |\n© | DemandéparDr? AFFRS ARDELEATER) iT]\neen\nBIOCHIMIE CLINIQUE (SANG) '\nOO L……<vvocacrersceneiontg oT some\net S.3immoi/t (ae\nOLESTEROL TOTAL... 2,01,2/1 (16-25)\nes 521 mmolf (689-645)\nOLESTEROL 6.4.0... pe cecneeecee (08-1588)\nTRIGLYCERIDES.....ss2si casse ces euenens 156g/1 (06-165) =\n178 mmol (Cassie); +\nORER Svs canwsaueews eaesiee Qoeten sence 026 g/l (04-08), “oat aateetiay:\n432 mmol/l (166-83) \\\nCREATININE.0...00s<ssesssccaseesecesees | 920mgl (7-16) yo\n82,22 jirnol/l (6195-1249) | +,\nTRANSAMINASES (CHER CUVE CET OT\nASATONSGOT a. roue renom nererenmaln anna ae 28UI1 (Inférieur a 40) Fa\n28,00 UI/ (iggeieix 40) t\nALAPOUSGRD cc omawaeas menaces 28 UI (Inférieura 40) 1304/06/12)\n28,00: UI) (Cintérieur:à 40)\nNous-vous remercions da votre confiance at vous souhalions bon rétablissement: .\n“= x 7 “= Ver (Nines ME\n; ’ 1 | , Ls\nmr Les\noA ‘\nul = 7 r\n’ ' =\n* LU À\n+ gas oe\nPT\nrm \"eee a\n'\nvu Ce a. - us\n: | ee\nL rh. a FE en +\n———— TE a —— =\n————— 5 a EE\n",
+  "extraction_source": "hybrid_local_fast_medical_ocr",
+  "local_pipeline": {
+    "architecture": "Pretraitement -> OCR medical rapide -> JSON structure",
+    "content_source": "medical_fast_ocr",
+    "qwen_used": false,
+    "reason": "Retour rapide pour les images medicales afin d'eviter une attente longue devant l'utilisateur."
+  },
+  "_meta": {
+    "saved_at": "2026-06-07T16:10:45.437515+00:00",
+    "source_filename": "analyse5.jpg",
+    "kind": "medical_local",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "medical_lab_report",
+    "source_mime": "image/jpeg",
+    "source_size": 200313,
+    "stored_in_database": true,
+    "source_file_relative": "medical_local\\20260607T161045Z_analyse5.jpg"
+  }
+}

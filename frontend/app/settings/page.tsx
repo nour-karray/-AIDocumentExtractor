@@ -70,7 +70,7 @@ const settingsDefaults: UiSettings = {
 
 const tabItems: Array<{ value: SettingsTab; label: string; icon: typeof Globe }> = [
   { value: "general", label: "General", icon: Globe },
-  { value: "extraction", label: "Extraction OCR", icon: Sparkles },
+  { value: "extraction", label: "Extraction locale", icon: Sparkles },
   { value: "ai", label: "IA & Modeles", icon: Bot },
   { value: "security", label: "Securite", icon: Shield },
   { value: "storage", label: "Stockage & Exports", icon: FolderArchive },
@@ -175,51 +175,36 @@ export default function SettingsPage() {
   const [meta, setMeta] = useState<MetaPayload | null>(null);
   const [activeTab, setActiveTab] = useState<SettingsTab>("general");
   const [uiSettings, setUiSettings] = useState<UiSettings>(settingsDefaults);
-  const [aiProvider, setAiProvider] = useState("gemini");
-  const [geminiKey, setGeminiKey] = useState("");
-  const [geminiModel, setGeminiModel] = useState("");
-  const [openaiKey, setOpenaiKey] = useState("");
-  const [openaiModel, setOpenaiModel] = useState("");
-  const [anthropicKey, setAnthropicKey] = useState("");
-  const [anthropicModel, setAnthropicModel] = useState("");
+  const [aiProvider, setAiProvider] = useState("local");
+  const [ollamaHost, setOllamaHost] = useState("http://127.0.0.1:11434");
+  const [localModel, setLocalModel] = useState("qwen2.5:7b-instruct");
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     fetchMeta().then((payload) => {
       setMeta(payload);
       setUiSettings(readStoredJson(storageKeys.uiSettings, settingsDefaults));
-      setAiProvider(readStoredValue(storageKeys.aiProvider, "gemini"));
-      setGeminiKey(readStoredValue(storageKeys.geminiKey, ""));
-      setGeminiModel(readStoredValue(storageKeys.geminiModel, payload.defaultGeminiModel));
-      setOpenaiKey(readStoredValue(storageKeys.openaiKey, ""));
-      setOpenaiModel(readStoredValue(storageKeys.openaiModel, "gpt-4o"));
-      setAnthropicKey(readStoredValue(storageKeys.anthropicKey, ""));
-      setAnthropicModel(readStoredValue(storageKeys.anthropicModel, "claude-3-5-sonnet-latest"));
+      setAiProvider(readStoredValue(storageKeys.aiProvider, "local"));
+      setOllamaHost(readStoredValue(storageKeys.ollamaHost, payload.defaultOllamaHost ?? "http://127.0.0.1:11434"));
+      setLocalModel(readStoredValue(storageKeys.localModel, payload.defaultLocalModel ?? "qwen2.5:7b-instruct"));
     });
   }, []);
 
   const saveSettings = () => {
     writeStoredJson(storageKeys.uiSettings, uiSettings);
     writeStoredValue(storageKeys.aiProvider, aiProvider);
-    writeStoredValue(storageKeys.geminiKey, geminiKey);
-    writeStoredValue(storageKeys.geminiModel, geminiModel);
-    writeStoredValue(storageKeys.openaiKey, openaiKey);
-    writeStoredValue(storageKeys.openaiModel, openaiModel);
-    writeStoredValue(storageKeys.anthropicKey, anthropicKey);
-    writeStoredValue(storageKeys.anthropicModel, anthropicModel);
+    writeStoredValue(storageKeys.ollamaHost, ollamaHost);
+    writeStoredValue(storageKeys.localModel, localModel);
+    writeStoredValue(storageKeys.defaultMethod, "local");
     setSaved(true);
     window.setTimeout(() => setSaved(false), 1800);
   };
 
   const resetSettings = () => {
     setUiSettings(settingsDefaults);
-    setAiProvider("gemini");
-    setGeminiKey("");
-    setGeminiModel(meta?.defaultGeminiModel ?? "gemini-2.5-flash");
-    setOpenaiKey("");
-    setOpenaiModel("gpt-4o");
-    setAnthropicKey("");
-    setAnthropicModel("claude-3-5-sonnet-latest");
+    setAiProvider("local");
+    setOllamaHost("http://127.0.0.1:11434");
+    setLocalModel("qwen2.5:7b-instruct");
     setTheme("system");
     setSaved(false);
   };
@@ -480,23 +465,20 @@ export default function SettingsPage() {
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
             <SectionShell
               icon={<Sparkles className="h-5 w-5" />}
-              title="Extraction OCR"
+              title="Extraction locale"
               description="Ajustez les preferences d'extraction et le moteur utilise par defaut."
             >
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <div className="text-[12px] font-semibold text-[#687292]">Fournisseur IA par defaut</div>
                   <Select value={aiProvider} onChange={(event) => setAiProvider(event.target.value)}>
-                    <option value="gemini">Gemini</option>
-                    <option value="openai">OpenAI</option>
-                    <option value="anthropic">Anthropic</option>
+                    <option value="local">Docling + Qwen2.5 local</option>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <div className="text-[12px] font-semibold text-[#687292]">Mode OCR local</div>
-                  <Select defaultValue="Tesseract + EasyOCR">
-                    <option>Tesseract + EasyOCR</option>
-                    <option>Tesseract uniquement</option>
+                  <div className="text-[12px] font-semibold text-[#687292]">Pipeline actif</div>
+                  <Select defaultValue="Docling + Qwen2.5 local">
+                    <option>Docling + Qwen2.5 local</option>
                   </Select>
                 </div>
               </div>
@@ -505,7 +487,7 @@ export default function SettingsPage() {
             <Card className="space-y-3">
               <div className="text-[15px] font-bold text-[#1b2440] dark:text-white">Conseil</div>
               <div className="text-[12px] leading-6 text-[#7a83a2] dark:text-[#aeb7d2]">
-                Utilisez `Gemini` pour les factures et tickets complexes, et `OCR local` comme fallback sans API.
+                Le mode par defaut est l'architecture locale hybride : pretraitement, Docling, controle qualite, fallback PaddleOCR, puis Qwen2.5 local.
               </div>
             </Card>
           </div>
@@ -513,74 +495,66 @@ export default function SettingsPage() {
 
         {activeTab === "ai" ? (
           <div className="space-y-4">
-            <div className="grid gap-4 xl:grid-cols-3">
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
               <Card className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="text-[15px] font-bold text-[#1b2440] dark:text-white">Gemini</div>
-                  <Badge tone="success">Actif</Badge>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-[15px] font-bold text-[#1b2440] dark:text-white">Docling + Qwen2.5</div>
+                  <Badge tone={meta?.localPipeline?.available ? "success" : "warning"}>
+                    {meta?.localPipeline?.available ? "Actif" : "A configurer"}
+                  </Badge>
                 </div>
                 <Input
-                  type="password"
-                  value={geminiKey}
-                  onChange={(event) => setGeminiKey(event.target.value)}
-                  placeholder="GEMINI_API_KEY"
+                  value={ollamaHost}
+                  onChange={(event) => setOllamaHost(event.target.value)}
+                  placeholder="http://127.0.0.1:11434"
                 />
                 <Input
-                  value={geminiModel}
-                  onChange={(event) => setGeminiModel(event.target.value)}
-                  placeholder="gemini-2.5-flash"
+                  value={localModel}
+                  onChange={(event) => setLocalModel(event.target.value)}
+                  placeholder="qwen2.5:7b-instruct"
                 />
                 <div className="text-[12px] leading-6 text-[#7a83a2] dark:text-[#aeb7d2]">
-                  Supporte l'extraction reelle dans cette version.
-                </div>
-              </Card>
-
-              <Card className="space-y-3">
-                <div className="text-[15px] font-bold text-[#1b2440] dark:text-white">OpenAI</div>
-                <Input
-                  type="password"
-                  value={openaiKey}
-                  onChange={(event) => setOpenaiKey(event.target.value)}
-                  placeholder="OPENAI_API_KEY"
-                />
-                <Input
-                  value={openaiModel}
-                  onChange={(event) => setOpenaiModel(event.target.value)}
-                  placeholder="gpt-4o"
-                />
-                <div className="text-[12px] leading-6 text-[#7a83a2] dark:text-[#aeb7d2]">
-                  Cle et modele prepares ici. L'integration backend reste a brancher.
+                  Pipeline local branche au backend : le fichier est valide et pretraite, Docling produit le Markdown, le backend verifie sa qualite, PaddleOCR prend le relais si le contenu est faible, puis Qwen2.5 via Ollama retourne le JSON valide.
                 </div>
               </Card>
 
               <Card className="space-y-3">
-                <div className="text-[15px] font-bold text-[#1b2440] dark:text-white">Anthropic</div>
-                <Input
-                  type="password"
-                  value={anthropicKey}
-                  onChange={(event) => setAnthropicKey(event.target.value)}
-                  placeholder="ANTHROPIC_API_KEY"
-                />
-                <Input
-                  value={anthropicModel}
-                  onChange={(event) => setAnthropicModel(event.target.value)}
-                  placeholder="claude-3-5-sonnet-latest"
-                />
+                <div className="text-[15px] font-bold text-[#1b2440] dark:text-white">Etat local</div>
                 <div className="text-[12px] leading-6 text-[#7a83a2] dark:text-[#aeb7d2]">
-                  Cle et modele prepares ici. L'integration backend reste a brancher.
+                  Docling : {meta?.localPipeline?.doclingAvailable ? "installe" : "non installe"}
+                  <br />
+                  PaddleOCR : {meta?.localPipeline?.paddleocrAvailable ? "installe" : "non installe"}
+                  <br />
+                  Ollama : {meta?.localPipeline?.ollamaAvailable ? "joignable" : "non joignable"}
                 </div>
               </Card>
             </div>
 
-            <Card className="space-y-3">
-              <div className="text-[15px] font-bold text-[#1b2440] dark:text-white">Emplacement recommande</div>
-              <div className="text-[12px] leading-6 text-[#7a83a2] dark:text-[#aeb7d2]">
-                {meta?.geminiInstructions.server}
+            <SectionShell
+              icon={<Sparkles className="h-5 w-5" />}
+              title="Architecture"
+              description="Chemin reel utilise par le backend pour extraire les champs metier."
+            >
+              <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
+                {(meta?.localPipeline?.architecture ?? [
+                  "Document PDF/image",
+                  "Pretraitement",
+                  "Docling vers Markdown",
+                  "Controle qualite",
+                  "Fallback PaddleOCR",
+                  "Qwen2.5 vers JSON",
+                  "Validation metier",
+                ]).map((step, index) => (
+                  <div
+                    key={step}
+                    className="rounded-[16px] border border-[rgba(139,147,172,0.14)] bg-[#fbfcff] p-3 dark:border-white/10 dark:bg-[#0f1525]"
+                  >
+                    <div className="text-[11px] font-bold text-[#7c4dff]">{index + 1}</div>
+                    <div className="mt-2 text-[12px] font-semibold leading-5 text-[#1b2440] dark:text-white">{step}</div>
+                  </div>
+                ))}
               </div>
-              <div className="rounded-xl bg-[#111827] px-3 py-2 font-mono text-[11px] text-[#9bf5b7]">
-                {meta?.geminiInstructions.pathHint}
-              </div>
-            </Card>
+            </SectionShell>
           </div>
         ) : null}
 

@@ -1,0 +1,91 @@
+{
+  "document_type": "supplier_invoice",
+  "invoice_number": "FAC-SYN-2026002",
+  "invoice_date": "2026-04-05",
+  "due_date": "2026-05-05",
+  "currency": "TND",
+  "seller": {
+    "name": "NOVA PRINT",
+    "address": "Lac 2, Tunis",
+    "tax_id": "MF4412077E",
+    "iban": "TN5910000000123456789012",
+    "email": "",
+    "phone": ""
+  },
+  "client": {
+    "name": "Societe Test Nord",
+    "address": "Tunis",
+    "tax_id": "",
+    "email": "",
+    "phone": ""
+  },
+  "items": [
+    {
+      "description": "Consommables",
+      "quantity": "3",
+      "unit": "u",
+      "unit_price": "69.00",
+      "net_amount": "207.00",
+      "tax_rate": "19%",
+      "tax_amount": "39.33",
+      "gross_amount": "246.33"
+    },
+    {
+      "description": "Support technique",
+      "quantity": "4",
+      "unit": "u",
+      "unit_price": "80.00",
+      "net_amount": "320.00",
+      "tax_rate": "19%",
+      "tax_amount": "60.80",
+      "gross_amount": "380.80"
+    },
+    {
+      "description": "Installation",
+      "quantity": "1",
+      "unit": "u",
+      "unit_price": "91.00",
+      "net_amount": "91.00",
+      "tax_rate": "19%",
+      "tax_amount": "17.29",
+      "gross_amount": "108.29"
+    },
+    {
+      "description": "Abonnement logiciel",
+      "quantity": "2",
+      "unit": "u",
+      "unit_price": "102.00",
+      "net_amount": "204.00",
+      "tax_rate": "19%",
+      "tax_amount": "38.76",
+      "gross_amount": "242.76"
+    }
+  ],
+  "summary": {
+    "subtotal": "822.00",
+    "tax_total": "156.18",
+    "discount": "0.00",
+    "shipping": "",
+    "total_amount": "978.18",
+    "amount_due": "978.18"
+  },
+  "confidence": "high",
+  "missing_fields": [],
+  "raw_notes": "",
+  "warnings": [],
+  "extraction_quality": 0.93,
+  "extraction_source": "gemini",
+  "raw_text": "FACTURE FOURNISSEUR\nNOVA PRINT\nLac 2, Tunis\nIdentifiant fiscal MF4412077E\nFacture No FAC-SYN-2026002\nDate 2026-04-05\nEcheance 2026-05-05\nClient Societe Test Nord\nConsommables 3 69.00 19% 246.33\nSupport technique 4 80.00 19% 380.80\nInstallation 1 91.00 19% 108.29\nAbonnement logiciel 2 102.00 19% 242.76\nTOTAL TTC 978.18",
+  "_meta": {
+    "saved_at": "2026-06-09T18:29:27+00:00",
+    "source_filename": "facture_fournisseur_synth_02.jpg",
+    "kind": "supplier_invoice",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "supplier_invoice",
+    "source_mime": "image/jpeg",
+    "source_size": 197279,
+    "stored_in_database": true,
+    "source_file_relative": "supplier_invoice\\20260609T182927Z_facture_fournisseur_synth_02.jpg"
+  }
+}

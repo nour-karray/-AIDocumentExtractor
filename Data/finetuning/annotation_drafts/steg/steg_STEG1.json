@@ -1,0 +1,71 @@
+{
+  "verified": false,
+  "example_id": "steg_STEG1",
+  "source_path": "Data\\raw_Data\\electricite copy\\STEG1.png",
+  "input_path": "Data\\finetuning\\processed\\inputs\\steg\\steg_STEG1.txt",
+  "ground_truth_path": "Data\\finetuning\\processed\\ground_truth\\steg\\steg_STEG1.json",
+  "content_meta": {
+    "content_source": "tesseract_fast_text",
+    "docling_quality": {
+      "score": 5.0,
+      "usable": false,
+      "characters": 0,
+      "words": 0,
+      "lines": 0,
+      "tableLines": 0,
+      "digitCount": 0,
+      "noiseRatio": 0.0,
+      "reasons": [
+        "Texte trop court",
+        "Peu de mots exploitables",
+        "Aucun tableau Markdown detecte"
+      ]
+    },
+    "fallback_used": true,
+    "fallback_quality": {
+      "score": 100.0,
+      "usable": true,
+      "characters": 1407,
+      "words": 247,
+      "lines": 42,
+      "tableLines": 6,
+      "digitCount": 190,
+      "noiseRatio": 0.0,
+      "reasons": []
+    },
+    "docling_error": "Image/scan: OCR fallback direct pour eviter un traitement Docling trop long. PaddleOCR: PaddleOCR a depasse 3 secondes; fallback OCR local rapide utilise.",
+    "fallback_error": null
+  },
+  "warnings": [],
+  "draft": {
+    "document_type": "steg_invoice",
+    "reference": "",
+    "numero_compteur": "",
+    "date_facture": "",
+    "montant_a_payer": "",
+    "date_limite_paiement": "",
+    "periode_du": "",
+    "periode_au": "",
+    "coupon_reference_raw": "",
+    "coupon_montant": "",
+    "confidence_note": "high"
+  },
+  "ground_truth": {
+    "document_type": "steg_invoice",
+    "reference": "",
+    "numero_compteur": "",
+    "date_facture": "",
+    "montant_a_payer": "",
+    "date_limite_paiement": "",
+    "periode_du": "",
+    "periode_au": "",
+    "coupon_reference_raw": "",
+    "coupon_montant": "",
+    "confidence_note": "high"
+  },
+  "review_instructions": [
+    "Open the source image and correct ground_truth.",
+    "Set verified to true only after manual validation.",
+    "Run this script again with --promote-verified."
+  ]
+}

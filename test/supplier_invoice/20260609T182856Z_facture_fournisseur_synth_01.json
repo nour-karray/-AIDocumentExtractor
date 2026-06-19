@@ -1,0 +1,91 @@
+{
+  "document_type": "supplier_invoice",
+  "invoice_number": "FAC-SYN-2026001",
+  "invoice_date": "2026-04-03",
+  "due_date": "2026-05-03",
+  "currency": "TND",
+  "seller": {
+    "name": "BUREAU PRO",
+    "address": "Avenue de France, Tunis",
+    "tax_id": "MF9912450C",
+    "iban": "TN5910000000123456789012",
+    "email": "",
+    "phone": ""
+  },
+  "client": {
+    "name": "Clinique Atlas",
+    "address": "Tunis",
+    "tax_id": "",
+    "email": "",
+    "phone": ""
+  },
+  "items": [
+    {
+      "description": "Maintenance",
+      "quantity": "2",
+      "unit": "u",
+      "unit_price": "62.00",
+      "net_amount": "124.00",
+      "tax_rate": "19%",
+      "tax_amount": "23.56",
+      "gross_amount": "147.56"
+    },
+    {
+      "description": "Consommables",
+      "quantity": "3",
+      "unit": "u",
+      "unit_price": "73.00",
+      "net_amount": "219.00",
+      "tax_rate": "19%",
+      "tax_amount": "41.61",
+      "gross_amount": "260.61"
+    },
+    {
+      "description": "Support technique",
+      "quantity": "4",
+      "unit": "u",
+      "unit_price": "84.00",
+      "net_amount": "336.00",
+      "tax_rate": "19%",
+      "tax_amount": "63.84",
+      "gross_amount": "399.84"
+    },
+    {
+      "description": "Installation",
+      "quantity": "1",
+      "unit": "u",
+      "unit_price": "95.00",
+      "net_amount": "95.00",
+      "tax_rate": "19%",
+      "tax_amount": "18.05",
+      "gross_amount": "113.05"
+    }
+  ],
+  "summary": {
+    "subtotal": "774.00",
+    "tax_total": "147.06",
+    "discount": "0.00",
+    "shipping": "",
+    "total_amount": "921.06",
+    "amount_due": "921.06"
+  },
+  "confidence": "high",
+  "missing_fields": [],
+  "raw_notes": "",
+  "warnings": [],
+  "extraction_quality": 0.93,
+  "extraction_source": "gemini",
+  "raw_text": "FACTURE FOURNISSEUR\nBUREAU PRO\nAvenue de France, Tunis\nIdentifiant fiscal MF9912450C\nFacture No FAC-SYN-2026001\nDate 2026-04-03\nEcheance 2026-05-03\nClient Clinique Atlas\nMaintenance 2 62.00 19% 147.56\nConsommables 3 73.00 19% 260.61\nSupport technique 4 84.00 19% 399.84\nInstallation 1 95.00 19% 113.05\nTOTAL TTC 921.06",
+  "_meta": {
+    "saved_at": "2026-06-09T18:28:56+00:00",
+    "source_filename": "facture_fournisseur_synth_01.jpg",
+    "kind": "supplier_invoice",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "supplier_invoice",
+    "source_mime": "image/jpeg",
+    "source_size": 196478,
+    "stored_in_database": true,
+    "source_file_relative": "supplier_invoice\\20260609T182856Z_facture_fournisseur_synth_01.jpg"
+  }
+}

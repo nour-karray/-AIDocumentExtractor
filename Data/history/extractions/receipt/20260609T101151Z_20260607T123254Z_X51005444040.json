@@ -1,0 +1,38 @@
+{
+  "store_name": "B.I.G. - Bens Independent Grocer",
+  "date": "09/03/18",
+  "time": "18:08:53",
+  "ticket_number": "BAT01201803090220",
+  "currency": null,
+  "items": [
+    {
+      "description": "Evian Mineral Water 6x1.25L",
+      "quantity": "2",
+      "unit_price": "53.50",
+      "line_total": "107.00"
+    },
+    {
+      "description": "Fresh Cut Honey Jackfruit Peeled 400g",
+      "quantity": "3",
+      "unit_price": "8.90",
+      "line_total": "26.70"
+    }
+  ],
+  "total": "133.70",
+  "payment_method": "Cash",
+  "warnings": [],
+  "extraction_quality": 0.85,
+  "extraction_source": "gemini",
+  "_meta": {
+    "saved_at": "2026-06-09T10:11:51.280404+00:00",
+    "source_filename": "20260607T123254Z_X51005444040.jpg",
+    "kind": "receipt",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "receipt",
+    "source_mime": "image/jpeg",
+    "source_size": 314051,
+    "stored_in_database": true,
+    "source_file_relative": "receipt\\20260609T101151Z_20260607T123254Z_X51005444040.jpg"
+  }
+}

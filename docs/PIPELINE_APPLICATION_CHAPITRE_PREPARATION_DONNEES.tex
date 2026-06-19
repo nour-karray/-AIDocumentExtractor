@@ -1,0 +1,309 @@
+\section{Pipeline de l'application lié à la préparation des données}
+
+Le pipeline de l'application représente l'enchaînement des étapes permettant de transformer un document brut, importé par l'utilisateur, en données structurées exploitables par la plateforme. Dans le cadre de ce chapitre, ce pipeline concerne principalement la collecte, la préparation, le prétraitement, l'extraction OCR et la normalisation des données.
+
+\subsection{Vue générale du pipeline}
+
+Le fonctionnement global de l'application suit une approche progressive. Le document est d'abord importé depuis l'interface web, puis transmis au backend pour être validé, prétraité, analysé par les moteurs d'extraction et finalement converti en un résultat JSON structuré.
+
+\begin{verbatim}
+Document brut
+   |
+   v
+Importation depuis l'interface web
+   |
+   v
+Validation du fichier
+   |
+   v
+Prétraitement du document avec OpenCV
+   |
+   v
+Détection du type de document
+   |
+   v
+Extraction du contenu par OCR ou IA
+   |
+   v
+Normalisation des champs extraits
+   |
+   v
+Validation métier et calcul du score qualité
+   |
+   v
+Génération du résultat JSON
+   |
+   v
+Stockage et affichage dans l'application
+\end{verbatim}
+
+\subsection{Étape 1 : Importation du document}
+
+L'utilisateur importe un ou plusieurs documents à partir de l'interface web de l'application. Les formats acceptés sont principalement les images et les fichiers PDF, notamment JPG, PNG, TIFF et PDF.
+
+Lors de l'importation, l'utilisateur peut choisir le type de document à traiter :
+
+\begin{itemize}
+\item détection automatique ;
+\item facture STEG ;
+\item analyse médicale ;
+\item facture fournisseur ;
+\item ticket de caisse.
+\end{itemize}
+
+Il peut également choisir la méthode d'extraction à utiliser, par exemple le pipeline local basé sur Docling, PaddleOCR et Qwen via Ollama, ou bien l'API Gemini lorsque cette méthode est sélectionnée.
+
+\subsection{Étape 2 : Validation du fichier}
+
+Après l'envoi du document au backend, l'application vérifie que le fichier est exploitable. Cette étape permet d'éviter le traitement de fichiers invalides ou incompatibles.
+
+Les contrôles effectués concernent notamment :
+
+\begin{itemize}
+\item le format du fichier ;
+\item la taille du document ;
+\item l'existence réelle du fichier ;
+\item la lisibilité du fichier image ou PDF ;
+\item la validité des pages dans le cas des documents PDF.
+\end{itemize}
+
+Si le fichier n'est pas valide, l'application retourne une erreur claire à l'utilisateur au lieu de produire un résultat incomplet.
+
+\subsection{Étape 3 : Prétraitement avec OpenCV}
+
+Le prétraitement constitue une étape essentielle du pipeline. Son objectif est d'améliorer la qualité visuelle du document avant son passage dans les moteurs OCR ou les modèles d'intelligence artificielle.
+
+Pour les images, l'application applique plusieurs traitements à l'aide d'OpenCV :
+
+\begin{itemize}
+\item correction de l'orientation EXIF ;
+\item redimensionnement de l'image ;
+\item détection des contours du document ;
+\item correction de perspective ;
+\item rotation automatique si le document est mal orienté ;
+\item correction de l'inclinaison ;
+\item amélioration du contraste ;
+\item renforcement de la netteté.
+\end{itemize}
+
+Pour les fichiers PDF, l'application vérifie d'abord que le document est valide, non protégé et qu'il contient des pages exploitables. Les pages peuvent ensuite être converties ou analysées selon la méthode d'extraction utilisée.
+
+\subsection{Étape 4 : Détection du type de document}
+
+Lorsque le mode automatique est activé, l'application tente d'identifier le type du document avant l'extraction. Cette détection repose sur plusieurs indices :
+
+\begin{itemize}
+\item le nom du fichier ;
+\item les mots-clés présents dans le document ;
+\item les résultats OCR rapides ;
+\item la structure générale du document ;
+\item les champs probables détectés.
+\end{itemize}
+
+Par exemple, la présence de mots comme \textit{STEG}, \textit{compteur}, \textit{montant à payer} ou \textit{référence} oriente le document vers la catégorie facture STEG. La présence de termes comme \textit{laboratoire}, \textit{patient}, \textit{hémoglobine} ou \textit{analyse} oriente le document vers la catégorie analyse médicale.
+
+\subsection{Étape 5 : Extraction du contenu}
+
+Après la préparation du document, l'application applique la méthode d'extraction choisie.
+
+\subsubsection{Pipeline local}
+
+Le pipeline local est la méthode principale de l'application. Il permet de traiter les documents sans envoyer les données vers un service externe.
+
+Ce pipeline combine plusieurs composants :
+
+\begin{itemize}
+\item Docling pour convertir les documents en contenu textuel ou Markdown ;
+\item PaddleOCR pour extraire le texte lorsque Docling ne donne pas un résultat suffisant ;
+\item Tesseract OCR comme solution de secours rapide ;
+\item Qwen local via Ollama pour transformer le texte extrait en JSON structuré.
+\end{itemize}
+
+Le fonctionnement est le suivant :
+
+\begin{verbatim}
+Document prétraité
+   |
+   v
+Docling
+   |
+   v
+Contrôle de qualité du texte extrait
+   |
+   +--> Texte suffisant : envoi vers Qwen local
+   |
+   +--> Texte insuffisant : fallback PaddleOCR ou Tesseract
+                              |
+                              v
+                         Envoi vers Qwen local
+                              |
+                              v
+                         JSON structuré
+\end{verbatim}
+
+Qwen reçoit le contenu extrait ainsi qu'un schéma attendu selon le type de document. Il retourne ensuite uniquement un objet JSON contenant les champs nécessaires.
+
+\subsubsection{Pipeline Gemini}
+
+Lorsque l'utilisateur sélectionne l'API Gemini, le document est traité par le modèle Gemini. Cette méthode est conservée comme alternative pour comparer les résultats ou traiter certains documents complexes.
+
+Dans ce cas, le document est envoyé à Gemini avec des instructions d'extraction. Le résultat obtenu est ensuite normalisé afin d'être compatible avec le reste de l'application.
+
+\subsubsection{OCR local classique}
+
+L'application conserve également un mode OCR local classique. Ce mode utilise principalement l'OCR pour lire le texte, sans raisonnement avancé par Qwen. Il sert surtout de méthode de secours ou de comparaison.
+
+\subsection{Étape 6 : Extraction des champs selon le type de document}
+
+Après l'extraction du texte, l'application récupère les champs importants selon la catégorie du document.
+
+\subsubsection{Facture STEG}
+
+Les principaux champs extraits sont :
+
+\begin{itemize}
+\item référence client ;
+\item numéro compteur ;
+\item date facture ;
+\item montant à payer ;
+\item date limite de paiement ;
+\item période de consommation.
+\end{itemize}
+
+\subsubsection{Analyse médicale}
+
+Les principaux champs extraits sont :
+
+\begin{itemize}
+\item laboratoire ;
+\item patient ;
+\item code patient ;
+\item date de naissance ;
+\item sexe ;
+\item numéro dossier ;
+\item numéro d'examen ;
+\item date de réception ;
+\item date d'édition ;
+\item médecin demandeur ;
+\item résultats des examens.
+\end{itemize}
+
+Les résultats des examens sont structurés sous forme de tableau contenant le nom de l'analyse, la valeur et l'unité.
+
+\subsubsection{Ticket de caisse}
+
+Les principaux champs extraits sont :
+
+\begin{itemize}
+\item magasin ;
+\item date ;
+\item heure ;
+\item numéro ticket ;
+\item articles ;
+\item total ;
+\item mode de paiement.
+\end{itemize}
+
+\subsubsection{Facture fournisseur}
+
+Les principaux champs extraits sont :
+
+\begin{itemize}
+\item fournisseur ;
+\item client ;
+\item numéro facture ;
+\item date facture ;
+\item date d'échéance ;
+\item articles ;
+\item taxes ;
+\item total TTC.
+\end{itemize}
+
+\subsection{Étape 7 : Normalisation en JSON}
+
+Les informations extraites sont ensuite converties dans une structure JSON standardisée. Cette étape permet à l'application d'afficher les résultats de manière homogène, même si les documents possèdent des formats différents.
+
+Exemple de structure JSON pour une facture STEG :
+
+\begin{verbatim}
+{
+  "document_type": "steg_invoice",
+  "reference": "123456789",
+  "numero_compteur": "456789",
+  "date_facture": "2025-05-12",
+  "montant_a_payer": "185.750",
+  "date_limite_paiement": "2025-06-01"
+}
+\end{verbatim}
+
+Exemple de structure JSON pour une analyse médicale :
+
+\begin{verbatim}
+{
+  "document_type": "medical_lab_report",
+  "patient_info": {
+    "patient_name": "Nom du patient",
+    "patient_id": "Code patient",
+    "date_of_birth": "Date de naissance",
+    "sex": "Sexe"
+  },
+  "tests": [
+    {
+      "raw_test_name": "Globules rouges",
+      "value": "4.8",
+      "unit": "Millions/mm3"
+    }
+  ]
+}
+\end{verbatim}
+
+\subsection{Étape 8 : Validation métier}
+
+Avant d'enregistrer le résultat, l'application vérifie la présence des champs obligatoires. Cette étape permet d'éviter l'affichage de résultats incomplets ou peu fiables.
+
+Par exemple :
+
+\begin{itemize}
+\item une facture STEG doit contenir la référence, le numéro compteur, la date facture et le montant à payer ;
+\item une analyse médicale doit contenir au minimum le patient et les résultats des examens ;
+\item un ticket de caisse doit contenir le magasin et le total ;
+\item une facture fournisseur doit contenir le numéro facture et le total.
+\end{itemize}
+
+Lorsque des champs importants sont absents, l'application ajoute des avertissements dans le JSON afin d'indiquer que le résultat doit être vérifié.
+
+\subsection{Étape 9 : Calcul du score qualité}
+
+L'application calcule ensuite un score qualité basé sur la présence des champs importants. Ce score permet d'évaluer la fiabilité du résultat extrait.
+
+Un score élevé signifie que la majorité des champs attendus ont été détectés. Un score faible indique que certains champs sont manquants ou mal reconnus.
+
+Ce score est utilisé dans l'interface pour indiquer si le document est :
+
+\begin{itemize}
+\item fiable ;
+\item correct ;
+\item à vérifier.
+\end{itemize}
+
+\subsection{Étape 10 : Stockage et exploitation}
+
+Lorsque le traitement est terminé, l'application enregistre :
+
+\begin{itemize}
+\item le fichier source ;
+\item le résultat JSON ;
+\item le type du document ;
+\item la méthode d'extraction utilisée ;
+\item le statut du traitement ;
+\item les avertissements éventuels ;
+\item le score qualité.
+\end{itemize}
+
+Les résultats sont stockés dans l'historique de l'application et peuvent ensuite être consultés depuis les pages Documents, Historiques et Tableau de bord. L'utilisateur peut également afficher le détail du document, consulter les champs extraits et exporter un rapport PDF.
+
+\subsection{Synthèse du pipeline}
+
+Le pipeline de l'application permet donc de passer d'un document brut à un résultat structuré et exploitable. Il combine des techniques classiques de traitement d'image, des moteurs OCR et des modèles d'intelligence artificielle afin de s'adapter à plusieurs types de documents.
+
+Cette architecture hybride améliore la robustesse du système face aux documents bruités, inclinés, flous ou présentant des structures différentes. Elle permet également de produire des données normalisées au format JSON, directement exploitables par l'interface web, l'historique, les rapports et les modules de visualisation.

@@ -1,0 +1,50 @@
+{
+  "store_name": "AZIZA",
+  "date": "2026-03-13",
+  "time": "09:20",
+  "ticket_number": "TKT20260610",
+  "currency": "TND",
+  "items": [
+    {
+      "description": "Pain complet",
+      "quantity": "2",
+      "unit_price": "4.65",
+      "line_total": "9.30"
+    },
+    {
+      "description": "Eau minerale",
+      "quantity": "3",
+      "unit_price": "6.95",
+      "line_total": "20.85"
+    },
+    {
+      "description": "Cafe",
+      "quantity": "1",
+      "unit_price": "9.25",
+      "line_total": "9.25"
+    },
+    {
+      "description": "Riz",
+      "quantity": "2",
+      "unit_price": "1.20",
+      "line_total": "2.40"
+    }
+  ],
+  "total": "41.80",
+  "payment_method": "Cash",
+  "warnings": [],
+  "extraction_quality": 0.88,
+  "extraction_source": "gemini",
+  "_meta": {
+    "saved_at": "2026-06-09T18:25:50+00:00",
+    "source_filename": "ticket_synth_10.jpg",
+    "kind": "receipt",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "receipt",
+    "source_mime": "image/jpeg",
+    "source_size": 158690,
+    "stored_in_database": true,
+    "source_file_relative": "receipt\\20260609T182550Z_ticket_synth_10.jpg"
+  }
+}

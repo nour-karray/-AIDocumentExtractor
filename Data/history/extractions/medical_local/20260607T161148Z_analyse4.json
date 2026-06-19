@@ -1,0 +1,71 @@
+{
+  "document_type": "medical_lab_report",
+  "lab_info": {
+    "lab_name": "D, Fatma Imal Hamza & Vus ag a",
+    "doctor_name": null
+  },
+  "patient_info": {
+    "patient_name": "CP994 Dossier N°: 240819/9129 LU",
+    "patient_id": null,
+    "date_of_birth": null,
+    "sex": null
+  },
+  "document_metadata": {
+    "exam_number": null,
+    "dossier_number": "e nan me 1 tO la we D",
+    "sample_date": "2024-08-19",
+    "report_date": "2024-08-19",
+    "page_number": null,
+    "organization": null,
+    "source_file": "C:\\Users\\User\\AppData\\Local\\Temp\\tmp2b27zumo.jpg",
+    "document_type": "medical_lab_report"
+  },
+  "tests": [
+    {
+      "raw_test_name": "lymphocytes",
+      "normalized_name": "unknown",
+      "category": "other",
+      "value_text": null,
+      "value": 8.0,
+      "secondary_value": null,
+      "previous_value": null,
+      "unit": "/mm3",
+      "reference_range": null,
+      "status": "unknown",
+      "raw_line": "lymphocytes",
+      "confidence": 0.7,
+      "notes": null
+    }
+  ],
+  "warnings": [
+    {
+      "code": "FAST_MEDICAL_OCR",
+      "message": "Extraction rapide utilisee pour eviter le blocage du pipeline local sur image medicale.",
+      "context": "C:\\Users\\User\\AppData\\Local\\Temp\\tmp2b27zumo.jpg"
+    },
+    {
+      "code": "AUTO_FAST_OCR_FALLBACK",
+      "message": "Analyse medicale image: retour OCR structure rapide utilise pour eviter une attente longue de Qwen/Ollama."
+    }
+  ],
+  "raw_text": "one nan me 1 tO la we\nD, Fatma Imal Hamza & Vus ag a\nMédecin Biologiste | = Aue) Isla) 9 tars” re +\nAncienne Assistante Hospitalo Universitatt@il Bie Bolan dyarle BJ\n[D patient : CP994 Dossier N°: 240819/9129 LU\n|Adr médecin : IMM IBN SINA von ere Ee GADDOUR\nlReçules | 19/08/2024 08:49:39 oa a 7\nEdité le : 19/08/2024 14:44:23 se\npe ; MORE ndé par: Dr SMAOUL NADIA\nEXAMENS HEMANOUOGIQUES\nUMERATION ET FORMULESANGUINE — 44\n__ ) |(SEMOGIOBING Si rscurenmaea) M8 108% ; tem man\n| | HEMATOGRIGE 1 | 39.96% “Gy ee WAERRESTOLACO\n| au er tee #87 i: RENEE SS eet00=\na N 1285 pe VASSENEZZ 02 27.0- |\n| (com Pme 128% (GNEREZ20'73505\nSie OO hee ES 4 oe’ ‘soit 2062 /mm3 Dee td al\nà ae = ms Oe A hope son | 0 mms Eu\nLe | | LYMPHOCYTES 7° “47.8 % soit 2.008, /mm3 Ow OR\n(AE MONOCYTES CL 00e, soit “126 /mm3  ——\n| PS HYDROXY VIT AMINED 1 a 0 1\n| technique: Ghimituminescence (CLI) ; 122:24ümol1 PF a ile\nlie Valeursisouhaitables +30 se aa ) er a\na) Toxic > 100 use Mgnmoll) Me CR es | Wp\ni) SCaYRKOSTIMULINE UUTRASENSTEKE (TSHR A a .\nea : |\nveu : WGK van) a\n| ss aed = —— 7 ~ ——— So, Se; |\nau ———— \"ML oe. SN feu ee 1eme |\n",
+  "extraction_source": "hybrid_local_fast_medical_ocr",
+  "local_pipeline": {
+    "architecture": "Pretraitement -> OCR medical rapide -> JSON structure",
+    "content_source": "medical_fast_ocr",
+    "qwen_used": false,
+    "reason": "Retour rapide pour les images medicales afin d'eviter une attente longue devant l'utilisateur."
+  },
+  "_meta": {
+    "saved_at": "2026-06-07T16:11:48.290506+00:00",
+    "source_filename": "analyse4.jpg",
+    "kind": "medical_local",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "medical_lab_report",
+    "source_mime": "image/jpeg",
+    "source_size": 210895,
+    "stored_in_database": true,
+    "source_file_relative": "medical_local\\20260607T161148Z_analyse4.jpg"
+  }
+}

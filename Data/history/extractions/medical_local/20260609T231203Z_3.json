@@ -1,0 +1,154 @@
+{
+  "document_type": "medical_lab_report",
+  "lab_info": {
+    "lab_name": "Médical ES",
+    "doctor_name": "Yasmine Khaled Demand Par Dr"
+  },
+  "patient_info": {
+    "patient_name": "Dr Yasmine Khaled"
+  },
+  "document_metadata": {
+    "dossier_number": "E KHALED Demand par Dr",
+    "sample_date": "2025-11-06",
+    "report_date": "2025-11-06",
+    "source_file": "C:\\Users\\User\\AppData\\Local\\Temp\\tmpj59htsl8.jpg",
+    "document_type": "medical_lab_report"
+  },
+  "tests": [
+    {
+      "raw_test_name": "Plaquettes",
+      "normalized_name": "platelets",
+      "category": "hematology",
+      "value": 790.0,
+      "unit": "uml",
+      "reference_range": {
+        "min": 130.0,
+        "max": 230.0,
+        "raw_text": "130-230"
+      },
+      "status": "high",
+      "raw_line": "PLAQUETTES .... Z 790 uml (130-230)",
+      "confidence": 0.7
+    },
+    {
+      "raw_test_name": "Hemoglobine",
+      "normalized_name": "hemoglobin",
+      "category": "hematology",
+      "value": 19391.0,
+      "unit": "g%",
+      "status": "unknown",
+      "raw_line": "NUMERATION FORMULE SANGUINE (NFS) a HEMATIES ....... : 19391 07-14) HEMOGLOBINE 114 mmol (10-40)",
+      "confidence": 0.7
+    },
+    {
+      "raw_test_name": "Hematocrite",
+      "normalized_name": "hematocrit",
+      "category": "hematology",
+      "value": 19391.0,
+      "unit": "%",
+      "status": "unknown",
+      "raw_line": "HEMATIES ....... : 19391 07-14) HEMOGLOBINE 114 mmol (10-40) HÉMATOCRITE ; 2600% (3-43)",
+      "confidence": 0.7
+    },
+    {
+      "raw_test_name": "Leucocytes",
+      "normalized_name": "leukocytes",
+      "category": "hematology",
+      "value": 114.0,
+      "unit": "/mm3",
+      "status": "unknown",
+      "raw_line": "HEMOGLOBINE 114 mmol (10-40) HÉMATOCRITE ; 2600% (3-43) LEUCOCYTES.…............ 2250 (05-18)",
+      "confidence": 0.7
+    },
+    {
+      "raw_test_name": "PN. Neutrophiles",
+      "normalized_name": "unknown",
+      "category": "other",
+      "value": 790.0,
+      "unit": "%",
+      "status": "unknown",
+      "raw_line": "PLAQUETTES .... Z 790 uml (130-230) FORMULE LEUCOCYTAIRE POLYNUCLÉAIRES (Neutrophiles) 430% @3-30)",
+      "confidence": 0.7
+    },
+    {
+      "raw_test_name": "PN. Eosinophiles",
+      "normalized_name": "unknown",
+      "category": "other",
+      "value": 430.0,
+      "unit": "%",
+      "status": "unknown",
+      "raw_line": "FORMULE LEUCOCYTAIRE POLYNUCLÉAIRES (Neutrophiles) 430% @3-30) EOSINOPHILES (Fosinophiles) 130% (2-18)",
+      "confidence": 0.7
+    },
+    {
+      "raw_test_name": "PN. Basophiles",
+      "normalized_name": "unknown",
+      "category": "other",
+      "value": 430.0,
+      "unit": "%",
+      "status": "unknown",
+      "raw_line": "POLYNUCLÉAIRES (Neutrophiles) 430% @3-30) EOSINOPHILES (Fosinophiles) 130% (2-18) BASOPHILES (Basophiles) .............. 035% (0-5)",
+      "confidence": 0.7
+    },
+    {
+      "raw_test_name": "Lymphocytes",
+      "normalized_name": "unknown",
+      "category": "other",
+      "value": 130.0,
+      "unit": "%",
+      "status": "unknown",
+      "raw_line": "EOSINOPHILES (Fosinophiles) 130% (2-18) BASOPHILES (Basophiles) .............. 035% (0-5) LYMPHOCYTES ... 293% (6-20)",
+      "confidence": 0.7
+    },
+    {
+      "raw_test_name": "Monocytes",
+      "normalized_name": "unknown",
+      "category": "other",
+      "value": 35.0,
+      "unit": "%",
+      "status": "unknown",
+      "raw_line": "BASOPHILES (Basophiles) .............. 035% (0-5) LYMPHOCYTES ... 293% (6-20) MONOCYTES 035% (S-5)",
+      "confidence": 0.7
+    }
+  ],
+  "warnings": [
+    {
+      "code": "MEDICAL_OCR_VARIANT_SELECTED",
+      "message": "Variante OCR retenue: original:gray900:psm4 (score 184.6, 1 tentative(s))."
+    },
+    {
+      "code": "DOCUMENT_PREPROCESSING_APPLIED",
+      "message": "Image redressee et amelioree avant OCR medical rapide.",
+      "context": "{'enabled': True, 'steps': ['format_and_size_validation', 'exif_orientation_correction', 'resize', 'document_perspective_rectification', 'resize', 'hough_line_deskew', 'deskew', 'contrast_and_sharpness_enhancement'], 'input_name': 'tmpj59htsl8.jpg', 'input_extension': '.jpg', 'input_size_bytes': 107191, 'original_width': 495, 'original_height': 1024, 'resize_scale': 2.0, 'perspective_area_ratio': 0.1319, 'perspective_aspect_ratio': 2.9827, 'perspective_correction': 'applied', 'perspective_output_width': 871, 'perspective_output_height': 302, 'auto_orientation_scores': {0: 385.25, 90: 61.75, 180: 303.75, 270: 64.0}, 'auto_orientation_degrees': 0, 'hough_deskew_angle': -1.87, 'deskew_angle': -1.35, 'output_width': 1775, 'output_height': 701, 'output_format': 'png', 'output_size_bytes': 1610042}"
+    },
+    {
+      "code": "FAST_MEDICAL_OCR",
+      "message": "Extraction rapide utilisee pour eviter le blocage du pipeline local sur image medicale (original:gray900:psm4).",
+      "context": "C:\\Users\\User\\AppData\\Local\\Temp\\tmpj59htsl8.jpg"
+    },
+    {
+      "code": "AUTO_FAST_OCR_FALLBACK",
+      "message": "Analyse medicale image: retour OCR structure rapide utilise pour eviter une attente longue de Qwen/Ollama."
+    }
+  ],
+  "raw_text": "Laboratoire Médical ES\n\nde la Méditerranée SEE\n\nTe 0813 123309 ca mes = ;\nMAHARES le : 06/11/2025 = =\n\nDosslerN*: 051125.099 Pvt\nNom: Dr. YASMINE KHALED\nDemand par Dr: Dr. YASMINE KHALED\n\nMr JALEL BEN SLIMANE)\n(Code Patient 12-4867\n\n06/11/2025 10:10\n\nHEMATOLOGIE ET IMMUNOLOGIE (SANG)\nNUMERATION FORMULE SANGUINE (NFS) a\nHEMATIES ....... : 19391 07-14)\nHEMOGLOBINE 114 mmol (10-40)\nHÉMATOCRITE ; 2600% (3-43)\nLEUCOCYTES.…............ 2250 (05-18)\nPLAQUETTES .... Z 790 uml (130-230)\nFORMULE LEUCOCYTAIRE\nPOLYNUCLÉAIRES (Neutrophiles) 430% @3-30)\nEOSINOPHILES (Fosinophiles) 130% (2-18)\nBASOPHILES (Basophiles) .............. 035% (0-5)\nLYMPHOCYTES ... 293% (6-20)\nMONOCYTES 035% (S-5)\nIMMUNOLOGIE\nPROTEINE C REACTIVE (CRP)....-.-- 02 moll (05-13)\nFERRITINE ce 175 pmol (179-260)\n\nSigné por La Van: Dr Karim Bela (Biolog\n\nee EE fe Soom\nde var on des Mas =\nCu ia ae rae 742900: SB, ca TOGO Da\n",
+  "extraction_source": "hybrid_local_fast_medical_ocr",
+  "local_pipeline": {
+    "architecture": "Pretraitement -> OCR medical rapide -> JSON structure",
+    "content_source": "medical_fast_ocr",
+    "qwen_used": false,
+    "reason": "Retour rapide pour les images medicales afin d'eviter une attente longue devant l'utilisateur."
+  },
+  "_meta": {
+    "saved_at": "2026-06-09T23:12:03.253254+00:00",
+    "source_filename": "3.jpg",
+    "kind": "medical_local",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "medical_lab_report",
+    "source_mime": "image/jpeg",
+    "source_size": 107191,
+    "stored_in_database": true,
+    "source_file_relative": "medical_local\\20260609T231203Z_3.jpg"
+  }
+}

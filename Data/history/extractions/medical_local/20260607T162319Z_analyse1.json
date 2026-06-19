@@ -1,0 +1,74 @@
+{
+  "document_type": "medical_lab_report",
+  "lab_info": {
+    "lab_name": "| MédecinBBlologiste = Apple) Lelhoniil 7d Luaiies due",
+    "doctor_name": null
+  },
+  "patient_info": {
+    "patient_name": "Gaddour Imtinene Hadrich Hs I A Ee Et Su",
+    "patient_id": null,
+    "date_of_birth": null,
+    "sex": null
+  },
+  "document_metadata": {
+    "exam_number": null,
+    "dossier_number": "BBlologiste",
+    "received_date": null,
+    "edited_date": null,
+    "request_date": null,
+    "sample_date": null,
+    "report_date": null,
+    "page_number": null,
+    "organization": null,
+    "source_file": "C:\\Users\\User\\AppData\\Local\\Temp\\tmpa84mhz83.jpg",
+    "document_type": "medical_lab_report"
+  },
+  "tests": [
+    {
+      "raw_test_name": "TSH",
+      "normalized_name": "tsh",
+      "category": "hormonology",
+      "value_text": null,
+      "value": 4.0,
+      "secondary_value": null,
+      "previous_value": null,
+      "unit": "%",
+      "reference_range": null,
+      "status": "unknown",
+      "raw_line": "THYREOSTIMULINE/ (Ts) | he a ; I Téchniqus nine wed Flores tAssay (ELFA) im L 4 ig : : 4%",
+      "confidence": 0.7,
+      "notes": null
+    }
+  ],
+  "warnings": [
+    {
+      "code": "FAST_MEDICAL_OCR",
+      "message": "Extraction rapide utilisee pour eviter le blocage du pipeline local sur image medicale.",
+      "context": "C:\\Users\\User\\AppData\\Local\\Temp\\tmpa84mhz83.jpg"
+    },
+    {
+      "code": "AUTO_FAST_OCR_FALLBACK",
+      "message": "Analyse medicale image: retour OCR structure rapide utilise pour eviter une attente longue de Qwen/Ollama."
+    }
+  ],
+  "raw_text": "| MédecinBBlologiste = Apple) Lelhoniil 7d Luaiies due\n\n(+ Ancienne Assistante Hospitalo Universitaire ijl duels dpeaLe Bitz}\n\na | LF an Page: |\n\nur r a = ab. | é =\nDrs MAO SINADIA. xamen N° : 160602 / 0412\noe st: Mme GADDOUR IMTINENE HADRICH\nhs i a ee et SU ~~ “Organisme: CNAM TIERS PAY/ 11835063/00\n| [+ 2 = = ke wa TH ¢ î ;\n\na ‘ + 7\nTechnique : Enzyme Linked Fluorescent Assay (ELFA)\n\n7 |: RESULTAT... ss ~ sl 6160 g/l a NT AS Se OS my\nPe Vekursscunatables 302100 pet @sa2sommonn = ina\nbras 20) GRAS au) RP der five. ke gk SE\npue ne 20 0m) 1 ey A EE ai al eee\n\nsh if \" ur i ’ À * a - a ‘ ui Le ab\nTHYREOSTIMULINE/ (Ts) | he a ; I\nTéchniqus nine wed Flores tAssay (ELFA) im L 4 ig : : 4%\nks pete T ae 4 i, ; a. No 1 Bil, ; sk ¥. 7 |\n10 ; di ; = r ue + he VON ; “ae 5 a\nMe ; 15 25 1 tr poor , Lr |\n| if\n\\ 0e)\n\n, - 7 19 a. rise et h a x + ma ES\n| * ae 1115 oh ; ,\n| ra = bp ee\nSS A\n\nve = ei, .s St : ;\n; ge) an À ta\nVoy! SG. yun Ye ain ue\n> SES a\n",
+  "extraction_source": "hybrid_local_fast_medical_ocr",
+  "local_pipeline": {
+    "architecture": "Pretraitement -> OCR medical rapide -> JSON structure",
+    "content_source": "medical_fast_ocr",
+    "qwen_used": false,
+    "reason": "Retour rapide pour les images medicales afin d'eviter une attente longue devant l'utilisateur."
+  },
+  "_meta": {
+    "saved_at": "2026-06-07T16:23:19.070690+00:00",
+    "source_filename": "analyse1.jpg",
+    "kind": "medical_local",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "medical_lab_report",
+    "source_mime": "image/jpeg",
+    "source_size": 149635,
+    "stored_in_database": true,
+    "source_file_relative": "medical_local\\20260607T162319Z_analyse1.jpg"
+  }
+}

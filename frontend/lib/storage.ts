@@ -8,9 +8,12 @@ export const storageKeys = {
   openaiModel: "docuai-openai-model",
   anthropicKey: "docuai-anthropic-key",
   anthropicModel: "docuai-anthropic-model",
+  ollamaHost: "docuai-ollama-host",
+  localModel: "docuai-local-model",
   lastExtraction: "docuai-last-extraction",
   activeModels: "docuai-active-models",
-  defaultMethod: "docuai-default-method"
+  defaultMethod: "docuai-default-method",
+  authToken: "docuai-auth-token"
 };
 
 export function readStoredValue(key: string, fallback = "") {
@@ -47,4 +50,25 @@ export function writeStoredJson(key: string, value: unknown) {
     return;
   }
   window.localStorage.setItem(key, JSON.stringify(value));
+}
+
+export function readSessionValue(key: string, fallback = "") {
+  if (typeof window === "undefined") {
+    return fallback;
+  }
+  return window.sessionStorage.getItem(key) ?? fallback;
+}
+
+export function writeSessionValue(key: string, value: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.sessionStorage.setItem(key, value);
+}
+
+export function removeSessionValue(key: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.sessionStorage.removeItem(key);
 }

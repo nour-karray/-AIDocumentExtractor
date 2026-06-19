@@ -1,0 +1,50 @@
+{
+  "store_name": "AZIZA",
+  "date": "2026-03-09",
+  "time": "15:16",
+  "ticket_number": "TKT20260606",
+  "currency": "TND",
+  "items": [
+    {
+      "description": "Fromage",
+      "quantity": "1",
+      "unit_price": "1.20",
+      "line_total": "1.20"
+    },
+    {
+      "description": "Huile",
+      "quantity": "2",
+      "unit_price": "3.50",
+      "line_total": "7.00"
+    },
+    {
+      "description": "Yaourt",
+      "quantity": "3",
+      "unit_price": "5.80",
+      "line_total": "17.40"
+    },
+    {
+      "description": "Lait",
+      "quantity": "1",
+      "unit_price": "8.10",
+      "line_total": "8.10"
+    }
+  ],
+  "total": "33.70",
+  "payment_method": "Cash",
+  "warnings": [],
+  "extraction_quality": 0.88,
+  "extraction_source": "gemini",
+  "_meta": {
+    "saved_at": "2026-06-09T18:23:46+00:00",
+    "source_filename": "ticket_synth_06.jpg",
+    "kind": "receipt",
+    "status": "ok",
+    "error_message": null,
+    "detected_kind": "receipt",
+    "source_mime": "image/jpeg",
+    "source_size": 157078,
+    "stored_in_database": true,
+    "source_file_relative": "receipt\\20260609T182346Z_ticket_synth_06.jpg"
+  }
+}

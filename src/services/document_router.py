@@ -234,14 +234,27 @@ def _weighted_steg_score(txt: str) -> int:
     return s
 
 
-def detect_document_type(file_path: Path) -> str:
+def detect_document_type(
+    file_path: Path,
+    *,
+    filename_hint: str | None = None,
+    path_hint: str | None = None,
+) -> str:
     """
     Indication heuristique du type de document (nom de fichier + OCR / texte PDF léger).
 
     Retourne l'un de : ``steg_invoice``, ``receipt``, ``supplier_invoice``, ``medical_lab_report``.
     """
-    name = file_path.name.lower()
-    if "steg" in name:
+    name = (filename_hint or file_path.name).lower()
+    combined_path_hint = " ".join(
+        part
+        for part in (str(file_path), filename_hint or "", path_hint or "")
+        if part
+    )
+    path_hint = combined_path_hint.replace("\\", "/").lower()
+    if "steg" in name or any(
+        key in path_hint for key in ("/steg_", "/steg/", "/electricite/")
+    ):
         return "steg_invoice"
     supplier_name_hints = (
         "supplier_invoice",
@@ -251,14 +264,13 @@ def detect_document_type(file_path: Path) -> str:
         "vendor_invoice",
         "purchase_invoice",
     )
-    if any(k in name for k in supplier_name_hints):
+    if any(k in name for k in supplier_name_hints) or "supplier_invoice" in path_hint:
         return "supplier_invoice"
     if "invoice" in name and not any(
         x in name for x in ("receipt", "ticket", "caisse", "recu", "reçu")
     ):
         return "supplier_invoice"
-    if any(k in name for k in ["analyse", "labo", "medical", "médical"]):
-        return "medical_lab_report"
+    medical_name_hint = any(k in name for k in ["analyse", "labo", "medical", "médical"])
     receipt_name_keys = (
         "ticket",
         "caisse",
@@ -272,8 +284,12 @@ def detect_document_type(file_path: Path) -> str:
         "courses",
         "shopping",
     )
-    if any(k in name for k in receipt_name_keys):
+    if any(k in name for k in receipt_name_keys) or any(
+        key in path_hint for key in ("/ticketscasse/", "/receipt/", "/receipt_test/")
+    ):
         return "receipt"
+    if medical_name_hint or any(key in path_hint for key in ("/medical/", "/analyse_medical/")):
+        return "medical_lab_report"
 
     suffix = file_path.suffix.lower()
     if suffix not in {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".pdf"}:
@@ -285,6 +301,8 @@ def detect_document_type(file_path: Path) -> str:
         txt = ""
 
     if not txt.strip():
+        if medical_name_hint:
+            return "medical_lab_report"
         return "medical_lab_report"
 
     steg_keys = (
@@ -364,6 +382,9 @@ def detect_document_type(file_path: Path) -> str:
     # STEG après ticket si indices suffisants
     if (steg_hits >= med_hits and steg_hits >= 2) or steg_score >= 4:
         return "steg_invoice"
+
+    if medical_name_hint:
+        return "medical_lab_report"
 
     return "medical_lab_report"
 
