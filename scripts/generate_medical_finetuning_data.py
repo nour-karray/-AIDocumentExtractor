@@ -5,13 +5,11 @@ import csv
 import json
 import random
 import shutil
-import textwrap
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
-
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 FINE_ROOT = PROJECT_ROOT / "Data" / "finetuning"

@@ -8,7 +8,7 @@ import argparse
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from google.genai import types
 
@@ -20,7 +20,6 @@ from src.gemini_vision import (
 )
 from src.services.gemini_payload_normalize import normalize_supplier_invoice_gemini
 from src.services.supplier_invoice_ocr import build_gemini_ocr_hint
-
 
 _SUPPLIER_LINE_ITEM_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -171,7 +170,7 @@ def _generate_supplier_raw_json(
     *,
     api_key: str,
     contents: list[Any],
-    model: Optional[str],
+    model: str | None,
     retries: int,
     retry_delay_sec: float,
 ) -> str:
@@ -217,7 +216,7 @@ def _repair_json_via_gemini_text(
     *,
     api_key: str,
     broken_response: str,
-    model: Optional[str],
+    model: str | None,
     retries: int,
     retry_delay_sec: float,
 ) -> str:
@@ -254,12 +253,12 @@ def _repair_json_via_gemini_text(
 def extract_supplier_invoice(
     file_path: str | Path,
     *,
-    gemini_api_key: Optional[str] = None,
-    model: Optional[str] = None,
+    gemini_api_key: str | None = None,
+    model: str | None = None,
     retries: int = 3,
     retry_delay_sec: float = 2.0,
     include_ocr_hint: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Extraction facture fournisseur depuis fichier local (image ou PDF).
     Utilise GEMINI_API_KEY ou GOOGLE_API_KEY.
@@ -276,7 +275,7 @@ def extract_supplier_invoice(
         or os.getenv("GOOGLE_API_KEY")
     )
     if not resolved_key:
-        raise EnvironmentError(
+        raise OSError(
             "GEMINI_API_KEY (ou GOOGLE_API_KEY) introuvable pour l'extraction facture fournisseur."
         )
 
@@ -320,7 +319,7 @@ def extract_supplier_invoice(
     return normalize_supplier_invoice_gemini(parsed, ocr_meta=ocr_meta)
 
 
-def _empty_error_payload(msg: str) -> Dict[str, Any]:
+def _empty_error_payload(msg: str) -> dict[str, Any]:
     return normalize_supplier_invoice_gemini(
         {"document_type": "supplier_invoice", "raw_notes": msg, "missing_fields": ["extraction_failed"]},
         ocr_meta={},

@@ -8,13 +8,12 @@ import argparse
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from google.genai import types
 
 from src.gemini_vision import extract_first_json_object, generate_vision_json, guess_image_mime_type
 from src.services.gemini_payload_normalize import normalize_steg_gemini_core
-
 
 PROMPT = """
 Tu es un extracteur expert pour les factures de la STEG (Société Tunisienne de l'Électricité et du Gaz), en français et/ou arabe.
@@ -44,7 +43,7 @@ Règles strictes:
 """.strip()
 
 
-def _ensure_steg_schema(data: Dict[str, Any]) -> Dict[str, Any]:
+def _ensure_steg_schema(data: dict[str, Any]) -> dict[str, Any]:
     return {
         "reference": data.get("reference"),
         "montant_a_payer": data.get("montant_a_payer"),
@@ -62,10 +61,10 @@ def extract_steg_invoice(
     image_path: str | Path,
     *,
     api_key: str | None = None,
-    model: Optional[str] = None,
+    model: str | None = None,
     retries: int = 3,
     retry_delay_sec: float = 2.0,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Extrait les champs STEG depuis une image locale via Gemini.
     Utilise GEMINI_API_KEY dans l'environnement.
@@ -80,7 +79,7 @@ def extract_steg_invoice(
 
     api_key = (api_key or os.getenv("GEMINI_API_KEY") or "").strip()
     if not api_key:
-        raise EnvironmentError(
+        raise OSError(
             "GEMINI_API_KEY introuvable. Définissez la variable d'environnement."
         )
 
@@ -105,7 +104,7 @@ def extract_steg_invoice(
     return normalize_steg_gemini_core(base)
 
 
-def _empty_error_payload(msg: str) -> Dict[str, Any]:
+def _empty_error_payload(msg: str) -> dict[str, Any]:
     return {
         "error": msg,
         "reference": None,

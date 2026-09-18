@@ -4,9 +4,9 @@ import os
 import re
 import shutil
 from collections import Counter
-from dataclasses import dataclass, asdict
+from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, List, Optional, Set, Tuple
 
 import cv2
 import numpy as np
@@ -34,15 +34,15 @@ TESSERACT_CANDIDATES = [
 @dataclass
 class ExtractionResult:
     file_name: str
-    reference: Optional[str]
-    montant_a_payer: Optional[str]
+    reference: str | None
+    montant_a_payer: str | None
     # Date limite ISO YYYY-MM-DD (Priere de payer avant le)
-    date_limite_paiement: Optional[str]
+    date_limite_paiement: str | None
     # Periode de consommation (ISO), ex: Du 2024.03.28 Au 2024.06.03
-    periode_du: Optional[str]
-    periode_au: Optional[str]
-    coupon_reference_raw: Optional[str]
-    coupon_montant: Optional[str]
+    periode_du: str | None
+    periode_au: str | None
+    coupon_reference_raw: str | None
+    coupon_montant: str | None
     confidence_note: str
 
 
@@ -207,7 +207,7 @@ def _easyocr_read_lines(bgr: np.ndarray) -> str:
         return ""
 
 
-def extract_montant_from_red_box(image: np.ndarray) -> Optional[str]:
+def extract_montant_from_red_box(image: np.ndarray) -> str | None:
     """
     STEG affiche souvent le total à payer dans un encadré rouge (bas de page).
     Détection HSV + OCR ciblé — mieux qu’un tableau générique sur photo pliée.
@@ -223,7 +223,7 @@ def extract_montant_from_red_box(image: np.ndarray) -> Optional[str]:
         mask, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7)), iterations=2
     )
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    patches: List[np.ndarray] = []
+    patches: list[np.ndarray] = []
     rh, rw = roi.shape[:2]
     for c in sorted(contours, key=cv2.contourArea, reverse=True)[:8]:
         if cv2.contourArea(c) < max(400, rh * rw // 800):
@@ -240,7 +240,7 @@ def extract_montant_from_red_box(image: np.ndarray) -> Optional[str]:
     if not patches:
         patches = [roi]
 
-    found: List[str] = []
+    found: list[str] = []
     for patch in patches:
         gray = cv2.cvtColor(patch, cv2.COLOR_BGR2GRAY)
         sc = cv2.resize(gray, (int(gray.shape[1] * 2.2), int(gray.shape[0] * 2.2)), interpolation=cv2.INTER_CUBIC)
@@ -351,7 +351,7 @@ def preprocess_roi(roi: np.ndarray, upscale: float = 2.0) -> np.ndarray:
     return bin_img
 
 
-def generate_preprocessed_variants(roi: np.ndarray, upscale: float = 2.0) -> List[np.ndarray]:
+def generate_preprocessed_variants(roi: np.ndarray, upscale: float = 2.0) -> list[np.ndarray]:
     gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
     h, w = gray.shape
     resized = cv2.resize(gray, (int(w * upscale), int(h * upscale)), interpolation=cv2.INTER_CUBIC)
@@ -364,19 +364,19 @@ def generate_preprocessed_variants(roi: np.ndarray, upscale: float = 2.0) -> Lis
     return [adaptive, otsu, adaptive_inv]
 
 
-def clean_amount(raw: str) -> Optional[str]:
+def clean_amount(raw: str) -> str | None:
     candidates = parse_amount_candidates(raw)
     if not candidates:
         return None
     return choose_best_amount(candidates)
 
 
-def parse_amount_candidates(text: str) -> List[str]:
+def parse_amount_candidates(text: str) -> list[str]:
     compact = normalize_digits(text).replace(" ", "").replace("O", "0").replace(".", ",")
     # Extract well-formed Tunisian amount tokens and avoid greedy merged strings.
     comma_amounts = re.findall(r"\d{1,7},\d{3}", compact)
     ints = re.findall(r"(?<!\d)\d{2,7}(?!\d)", compact)
-    combined: List[str] = []
+    combined: list[str] = []
     for token in comma_amounts + ints:
         token = token.strip(".,")
         if not token:
@@ -384,7 +384,7 @@ def parse_amount_candidates(text: str) -> List[str]:
         combined.append(token)
     # Keep order while removing duplicates
     seen = set()
-    cleaned: List[str] = []
+    cleaned: list[str] = []
     for c in combined:
         if c not in seen:
             seen.add(c)
@@ -392,7 +392,7 @@ def parse_amount_candidates(text: str) -> List[str]:
     return cleaned
 
 
-def choose_best_amount(candidates: List[str]) -> Optional[str]:
+def choose_best_amount(candidates: list[str]) -> str | None:
     if not candidates:
         return None
     # Prefer amounts in Tunisian bill style: integer + 3 decimals (e.g. 222,000)
@@ -415,7 +415,7 @@ def amount_to_millimes(value: str) -> int:
     return int(value) * 1000
 
 
-def choose_payment_amount(candidates: List[str]) -> Optional[str]:
+def choose_payment_amount(candidates: list[str]) -> str | None:
     if not candidates:
         return None
     strong = [c for c in candidates if re.fullmatch(r"\d{1,7},\d{3}", c)]
@@ -429,11 +429,11 @@ def choose_payment_amount(candidates: List[str]) -> Optional[str]:
     return best
 
 
-def is_strong_amount(value: Optional[str]) -> bool:
+def is_strong_amount(value: str | None) -> bool:
     return bool(value and re.fullmatch(r"\d{1,6},\d{3}", value))
 
 
-def is_plausible_steg_line_amount(value: Optional[str]) -> bool:
+def is_plausible_steg_line_amount(value: str | None) -> bool:
     """Evite les faux positifs (dates collees, bruit OCR). Montants STEG: au plus 4 chiffres avant la virgule (ex: 1200,000 ou 777,000)."""
     if not value:
         return False
@@ -448,13 +448,13 @@ def is_plausible_steg_line_amount(value: Optional[str]) -> bool:
         return False
 
 
-def format_reference_from_digits(digits: str) -> Optional[str]:
+def format_reference_from_digits(digits: str) -> str | None:
     if len(digits) != 9:
         return None
     return f"{digits[:5]} {digits[5:8]} {digits[8:]}"
 
 
-def derive_reference_from_footer_compact(coupon_reference: str) -> Optional[str]:
+def derive_reference_from_footer_compact(coupon_reference: str) -> str | None:
     digits = re.sub(r"\D", "", coupon_reference)
     if not digits:
         return None
@@ -477,7 +477,7 @@ def derive_reference_from_footer_compact(coupon_reference: str) -> Optional[str]
     return None
 
 
-def extract_reference(text: str) -> Optional[str]:
+def extract_reference(text: str) -> str | None:
     text = normalize_digits(text)
     normalized = re.sub(r"[^\d\s]", " ", text)
     normalized = re.sub(r"\s+", " ", normalized).strip()
@@ -491,16 +491,16 @@ def extract_reference(text: str) -> Optional[str]:
     return None
 
 
-def compact_to_spaced_reference(digits: str) -> Optional[str]:
+def compact_to_spaced_reference(digits: str) -> str | None:
     if len(digits) < 9:
         return None
     digits = digits[:9]
     return f"{digits[:5]} {digits[5:8]} {digits[8]}"
 
 
-def extract_reference_candidates_from_text(text: str) -> List[str]:
+def extract_reference_candidates_from_text(text: str) -> list[str]:
     text = normalize_digits(text)
-    candidates: List[str] = []
+    candidates: list[str] = []
     normalized = re.sub(r"[^\d\s]", " ", text)
     normalized = re.sub(r"\s+", " ", normalized).strip()
     candidates.extend(re.findall(r"\d{5}\s+\d{3}\s+\d", normalized))
@@ -526,7 +526,7 @@ def extract_reference_candidates_from_text(text: str) -> List[str]:
 
 def _extract_steg_text_hints(image: np.ndarray) -> str:
     """OCR global rapide sur zones-clés STEG (haut + recap bas)."""
-    parts: List[str] = []
+    parts: list[str] = []
     rois = [
         (0.02, 0.02, 0.98, 0.40),  # en-tête: référence/date
         (0.02, 0.40, 0.98, 0.90),  # recap + montant/date limite
@@ -545,7 +545,7 @@ def _extract_steg_text_hints(image: np.ndarray) -> str:
     return "\n".join(parts)
 
 
-def _extract_amount_from_text_hints(text: str) -> Optional[str]:
+def _extract_amount_from_text_hints(text: str) -> str | None:
     t = normalize_digits(text).lower()
     t = re.sub(r"(\d{1,4})\s+(\d{3})(?!\d)", r"\1,\2", t)
     patterns = [
@@ -553,7 +553,7 @@ def _extract_amount_from_text_hints(text: str) -> Optional[str]:
         r"المبلغ\s*المطلوب[^\d]{0,90}(\d{1,4},\d{3})",
         r"\(\s*19\s*\)[^\d]{0,90}(\d{1,4},\d{3})",
     ]
-    cands: List[str] = []
+    cands: list[str] = []
     for pat in patterns:
         for m in re.finditer(pat, t, re.IGNORECASE | re.DOTALL):
             v = m.group(1)
@@ -562,7 +562,7 @@ def _extract_amount_from_text_hints(text: str) -> Optional[str]:
     return max(cands, key=amount_to_millimes) if cands else None
 
 
-def vote_best_reference(candidates: List[str]) -> Optional[str]:
+def vote_best_reference(candidates: list[str]) -> str | None:
     if not candidates:
         return None
     cleaned = [re.sub(r"\s+", " ", c.strip()) for c in candidates if c.strip()]
@@ -574,8 +574,8 @@ def vote_best_reference(candidates: List[str]) -> Optional[str]:
 
 def extract_periode_du_au(
     image: np.ndarray,
-    exclude_iso_dates: Optional[Set[str]] = None,
-) -> Tuple[Optional[str], Optional[str]]:
+    exclude_iso_dates: set[str] | None = None,
+) -> tuple[str | None, str | None]:
     """
     Période de consommation STEG (Du … Au …).
     ``exclude_iso_dates`` : exclure la date limite de paiement (sinon confondue avec « Au »).
@@ -588,7 +588,7 @@ def extract_periode_du_au(
         (0.02, 0.28, 0.98, 0.72),
         (0.02, 0.35, 0.98, 0.78),
     ]
-    texts: List[str] = []
+    texts: list[str] = []
     for x1, y1, x2, y2 in rois:
         roi = crop_relative(image, x1, y1, x2, y2)
         if roi.size == 0:
@@ -606,11 +606,11 @@ def extract_periode_du_au(
 
     date_pat = r"(20\d{2})[.\-/](\d{1,2})[.\-/](\d{1,2})"
 
-    def _to_iso(m: re.Match) -> Optional[str]:
+    def _to_iso(m: re.Match) -> str | None:
         return _validate_ymd(int(m.group(1)), int(m.group(2)), int(m.group(3)))
 
-    du_candidates: List[str] = []
-    au_candidates: List[str] = []
+    du_candidates: list[str] = []
+    au_candidates: list[str] = []
     kw_period = re.compile(
         r"consomm|factur|période|periode|lecture|kwh|du\s|de\s|من|إلى|الفترة",
         re.IGNORECASE,
@@ -622,7 +622,7 @@ def extract_periode_du_au(
             line = line.strip()
             if len(line) < 12 or not kw_period.search(line):
                 continue
-            line_dates: List[str] = []
+            line_dates: list[str] = []
             for m in re.finditer(date_pat, line):
                 d = _to_iso(m)
                 if d and d not in skip:
@@ -669,7 +669,7 @@ def extract_periode_du_au(
     periode_du = Counter(du_candidates).most_common(1)[0][0] if du_candidates else None
     periode_au = Counter(au_candidates).most_common(1)[0][0] if au_candidates else None
 
-    pool_dates: List[str] = []
+    pool_dates: list[str] = []
     for txt in texts:
         for m in re.finditer(date_pat, txt):
             d = _to_iso(m)
@@ -716,7 +716,7 @@ def crop_relative(image: np.ndarray, x1: float, y1: float, x2: float, y2: float)
     return image[ya:yb, xa:xb]
 
 
-def _validate_ymd(y: int, mo: int, d: int) -> Optional[str]:
+def _validate_ymd(y: int, mo: int, d: int) -> str | None:
     if mo < 1 or mo > 12 or d < 1 or d > 31 or y < 2000 or y > 2099:
         return None
     return f"{y:04d}-{mo:02d}-{d:02d}"
@@ -727,7 +727,7 @@ def _is_plausible_steg_deadline_year(y: int) -> bool:
     return 2012 <= y <= 2038
 
 
-def _filter_plausible_deadline(iso: Optional[str]) -> Optional[str]:
+def _filter_plausible_deadline(iso: str | None) -> str | None:
     if not iso:
         return None
     try:
@@ -737,7 +737,7 @@ def _filter_plausible_deadline(iso: Optional[str]) -> Optional[str]:
     return iso if _is_plausible_steg_deadline_year(y) else None
 
 
-def normalize_date_yyyy_mm_dd(fragment: str) -> Optional[str]:
+def normalize_date_yyyy_mm_dd(fragment: str) -> str | None:
     """Convertit 2025.10.27, 2025-10-27, 2025/10/27, 2025 10 27, 20251027 en YYYY-MM-DD."""
     fragment = normalize_digits(re.sub(r"\s+", "", fragment.strip()))
     m = re.search(r"(20\d{2})[.\-/](\d{1,2})[.\-/](\d{1,2})", fragment)
@@ -749,7 +749,7 @@ def normalize_date_yyyy_mm_dd(fragment: str) -> Optional[str]:
     return None
 
 
-def try_parse_date_in_string(s: str) -> Optional[str]:
+def try_parse_date_in_string(s: str) -> str | None:
     """Toutes les formes usuelles STEG / OCR sur une ligne ou un bloc."""
     s = normalize_digits(s)
     for m in re.finditer(
@@ -764,7 +764,7 @@ def try_parse_date_in_string(s: str) -> Optional[str]:
     return None
 
 
-def parse_steg_payment_deadline_from_text(text: str) -> Optional[str]:
+def parse_steg_payment_deadline_from_text(text: str) -> str | None:
     """Extrait la date apres les libelles STEG (FR/AR)."""
     text = normalize_digits(text)
     tnorm = re.sub(r"\s+", " ", text)
@@ -818,14 +818,14 @@ def parse_steg_payment_deadline_from_text(text: str) -> Optional[str]:
 
 
 def _words_to_lines(
-    words: List[Tuple[str, int, int, int, int]], img_h: int
-) -> List[List[Tuple[str, int, int, int, int]]]:
+    words: list[tuple[str, int, int, int, int]], img_h: int
+) -> list[list[tuple[str, int, int, int, int]]]:
     if not words:
         return []
     y_tol = max(14, int(0.02 * img_h))
     words_sorted = sorted(words, key=lambda w: w[2] + w[4] // 2)
-    lines: List[List[Tuple[str, int, int, int, int]]] = []
-    current: List[Tuple[str, int, int, int, int]] = []
+    lines: list[list[tuple[str, int, int, int, int]]] = []
+    current: list[tuple[str, int, int, int, int]] = []
     ref_y = -10_000
     for w in words_sorted:
         yc = w[2] + w[4] // 2
@@ -856,7 +856,7 @@ def _line_triggers_payment_deadline_context(line_text: str) -> bool:
     return False
 
 
-def extract_date_below_arabic_before_keyword(gray: np.ndarray) -> Optional[str]:
+def extract_date_below_arabic_before_keyword(gray: np.ndarray) -> str | None:
     """
     Sur STEG, apres « الرجاء الدفع قبل » la date est souvent sur la ligne du dessous (gros chiffres).
     """
@@ -867,7 +867,7 @@ def extract_date_below_arabic_before_keyword(gray: np.ndarray) -> Optional[str]:
         config="--oem 3 --psm 6",
         output_type=Output.DICT,
     )
-    hits: List[Tuple[int, int, int, int]] = []
+    hits: list[tuple[int, int, int, int]] = []
     n = len(data["text"])
     for i in range(n):
         token = (data["text"][i] or "").strip()
@@ -887,14 +887,14 @@ def extract_date_below_arabic_before_keyword(gray: np.ndarray) -> Optional[str]:
             hits.append((x, y, ww, hh))
     if not hits:
         return None
-    found: List[str] = []
+    found: list[str] = []
     for kx, ky, kw, kh in hits:
         y_line_bottom = ky + kh
         x_center = kx + kw // 2
         # Bande verticale elargie (date parfois 1–2 lignes sous l’arabe, ou bruit OCR)
         y_min = max(0, ky - int(0.10 * rh))
         y_max = min(rh, y_line_bottom + int(0.14 * rh))
-        row_tokens: List[Tuple[int, str]] = []
+        row_tokens: list[tuple[int, str]] = []
         for i in range(n):
             token = normalize_digits((data["text"][i] or "").strip())
             if not token:
@@ -939,7 +939,7 @@ def extract_date_below_arabic_before_keyword(gray: np.ndarray) -> Optional[str]:
     return None
 
 
-def extract_date_limite_from_ocr_data(image: np.ndarray) -> Optional[str]:
+def extract_date_limite_from_ocr_data(image: np.ndarray) -> str | None:
     """
     Boites de mots Tesseract: repere payer / avant / montant...payer et cherche
     la date sur la meme ligne, les lignes voisines (souvent au-dessus sur STEG).
@@ -956,7 +956,7 @@ def extract_date_limite_from_ocr_data(image: np.ndarray) -> Optional[str]:
         config="--oem 3 --psm 6",
         output_type=Output.DICT,
     )
-    words: List[Tuple[str, int, int, int, int]] = []
+    words: list[tuple[str, int, int, int, int]] = []
     n = len(data["text"])
     for i in range(n):
         token = normalize_digits((data["text"][i] or "").strip())
@@ -975,12 +975,12 @@ def extract_date_limite_from_ocr_data(image: np.ndarray) -> Optional[str]:
         words.append((token, x, y, ww, hh))
 
     lines = _words_to_lines(words, rh)
-    found: List[str] = []
+    found: list[str] = []
     for li, line in enumerate(lines):
         line_text = " ".join(w[0] for w in line)
         if not _line_triggers_payment_deadline_context(line_text):
             continue
-        window_parts: List[str] = []
+        window_parts: list[str] = []
         for dj in (-2, -1, 0, 1, 2):
             j = li + dj
             if 0 <= j < len(lines):
@@ -1025,7 +1025,7 @@ def extract_date_limite_from_ocr_data(image: np.ndarray) -> Optional[str]:
     return None
 
 
-def extract_date_limite_footer_band(image: np.ndarray) -> Optional[str]:
+def extract_date_limite_footer_band(image: np.ndarray) -> str | None:
     """
     Encadre STEG en bas de facture (au-dessus du talon / ligne pointillee).
     Version legere: peu de passes OCR, sortie des qu'une date plausible est trouvee.
@@ -1085,7 +1085,7 @@ def extract_date_limite_footer_band(image: np.ndarray) -> Optional[str]:
 
 def extract_date_limite_sparse_multiline(
     image: np.ndarray, y1: float = 0.02, y2: float = 0.58
-) -> Optional[str]:
+) -> str | None:
     """
     PSM 11 (sparse): parcourt des lignes voisines; garde une date seulement si
     le bloc contient aussi payer/avant/قبل (evite dates de periode de facturation).
@@ -1097,7 +1097,7 @@ def extract_date_limite_sparse_multiline(
     gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
     h, w = gray.shape
     scaled = cv2.resize(gray, (int(w * 1.5), int(h * 1.5)), interpolation=cv2.INTER_CUBIC)
-    hits: List[str] = []
+    hits: list[str] = []
     for variant in (scaled,):  # une passe: image agrandie (meilleur compromis vitesse/qualite)
         txt = normalize_digits(ocr_text(variant, config="--oem 3 --psm 11", lang="eng+ara"))
         lines = [ln.strip() for ln in txt.splitlines() if ln.strip()]
@@ -1120,7 +1120,7 @@ def extract_date_limite_sparse_multiline(
     return None
 
 
-def extract_date_limite_paiement(image: np.ndarray) -> Optional[str]:
+def extract_date_limite_paiement(image: np.ndarray) -> str | None:
     """Date limite (Priere de payer avant le / الرجاء الدفع قبل), sortie YYYY-MM-DD."""
     d_foot = extract_date_limite_footer_band(image)
     if d_foot:
@@ -1130,7 +1130,7 @@ def extract_date_limite_paiement(image: np.ndarray) -> Optional[str]:
     if d0:
         return d0
 
-    found: List[str] = []
+    found: list[str] = []
     rois_fast = [
         (0.02, 0.38, 0.98, 0.82),
         (0.45, 0.04, 0.99, 0.52),
@@ -1234,10 +1234,10 @@ def _orientation_text_bonus(img: np.ndarray) -> int:
 
 
 def _coherent_steg_deadline(
-    deadline: Optional[str],
-    periode_du: Optional[str],
-    periode_au: Optional[str],
-) -> Optional[str]:
+    deadline: str | None,
+    periode_du: str | None,
+    periode_au: str | None,
+) -> str | None:
     if not deadline or not periode_au:
         return deadline
     if deadline < periode_au:
@@ -1248,11 +1248,11 @@ def _coherent_steg_deadline(
 
 
 def _compute_steg_confidence(
-    reference: Optional[str],
-    montant: Optional[str],
-    date_limite: Optional[str],
-    periode_du: Optional[str],
-    periode_au: Optional[str],
+    reference: str | None,
+    montant: str | None,
+    date_limite: str | None,
+    periode_du: str | None,
+    periode_au: str | None,
 ) -> str:
     strong_amount = is_strong_amount(montant)
     has_ref = bool(reference)
@@ -1269,15 +1269,15 @@ def _compute_steg_confidence(
     return "low"
 
 
-def extract_coupon_reference_and_amount(image: np.ndarray) -> Tuple[Optional[str], Optional[str]]:
+def extract_coupon_reference_and_amount(image: np.ndarray) -> tuple[str | None, str | None]:
     # Coupon de paiement en bas: colonnes "Montant" et "Reference"
     # Anciennes factures: bulletin plus haut (y ~0.55) ; ref "000006…" ou seulement "xxxxx xxx x"
     coupon_roi = crop_relative(image, 0.02, 0.55, 0.99, 1.00)
-    no_space_ref: Optional[str] = None
-    coupon_raw_display: Optional[str] = None
-    amount_candidates: List[str] = []
-    ref_long: List[str] = []
-    spaced_nine: List[str] = []
+    no_space_ref: str | None = None
+    coupon_raw_display: str | None = None
+    amount_candidates: list[str] = []
+    ref_long: list[str] = []
+    spaced_nine: list[str] = []
 
     for variant in generate_preprocessed_variants(coupon_roi, upscale=2.8)[:_STEG_MAX_VARIANTS]:
         text = normalize_digits(ocr_text(variant, config="--oem 3 --psm 6", lang="eng+ara"))
@@ -1363,7 +1363,7 @@ def select_best_orientation(image: np.ndarray) -> np.ndarray:
     return best_img
 
 
-def extract_fields_from_invoice(image_path: Path, debug_dir: Optional[Path] = None) -> ExtractionResult:
+def extract_fields_from_invoice(image_path: Path, debug_dir: Path | None = None) -> ExtractionResult:
     raw_image = enhance_steg_scan(read_image(image_path))
     raw_image = downscale_if_too_large(raw_image)
     raw_image = upscale_if_too_small(raw_image, min_side=1050)
@@ -1375,7 +1375,7 @@ def extract_fields_from_invoice(image_path: Path, debug_dir: Optional[Path] = No
 
     # 1) Tentative reference par mot-cle dans la zone haute
     top_keyword_ref = extract_reference_from_top_keyword(image)
-    ref_candidates_all: List[str] = []
+    ref_candidates_all: list[str] = []
     if top_keyword_ref:
         ref_candidates_all.extend([top_keyword_ref] * 4)
 
@@ -1383,7 +1383,7 @@ def extract_fields_from_invoice(image_path: Path, debug_dir: Optional[Path] = No
     ref_roi = crop_relative(image, 0.02, 0.04, 0.88, 0.44)
     ref_bin = preprocess_roi(ref_roi, upscale=2.4)
     ref_variants = generate_preprocessed_variants(ref_roi, upscale=2.4)[:_STEG_MAX_VARIANTS]
-    ref_candidates: List[str] = []
+    ref_candidates: list[str] = []
     for variant in ref_variants:
         txt = ocr_text(
             variant,
@@ -1408,7 +1408,7 @@ def extract_fields_from_invoice(image_path: Path, debug_dir: Optional[Path] = No
     # Fallback reference sur une zone plus large
     if not reference:
         ref_roi_2 = crop_relative(image, 0.02, 0.04, 0.92, 0.55)
-        ref_candidates2: List[str] = []
+        ref_candidates2: list[str] = []
         for variant in generate_preprocessed_variants(ref_roi_2, upscale=2.1)[:1]:
             txt = ocr_text(
                 variant,
@@ -1449,7 +1449,7 @@ def extract_fields_from_invoice(image_path: Path, debug_dir: Optional[Path] = No
     # Zone montant a payer (bas centre-gauche) — y plus haut pour anciennes factures
     amt_roi = crop_relative(image, 0.02, 0.56, 0.76, 0.94)
     amt_bin = preprocess_roi(amt_roi, upscale=2.2)
-    amt_candidates: List[str] = []
+    amt_candidates: list[str] = []
     for variant in generate_preprocessed_variants(amt_roi, upscale=2.3)[:_STEG_MAX_VARIANTS]:
         txt = ocr_text(
             variant,
@@ -1513,7 +1513,7 @@ def extract_fields_from_invoice(image_path: Path, debug_dir: Optional[Path] = No
     date_limite = extract_date_limite_paiement(image)
     if not date_limite and text_hints:
         date_limite = parse_steg_payment_deadline_from_text(text_hints)
-    excl: Set[str] = set()
+    excl: set[str] = set()
     if date_limite:
         excl.add(date_limite)
     periode_du, periode_au = extract_periode_du_au(image, exclude_iso_dates=excl)
@@ -1534,7 +1534,7 @@ def extract_fields_from_invoice(image_path: Path, debug_dir: Optional[Path] = No
     )
 
 
-def extract_amount_from_roi_with_keywords(amt_bin: np.ndarray) -> Optional[str]:
+def extract_amount_from_roi_with_keywords(amt_bin: np.ndarray) -> str | None:
     data = pytesseract.image_to_data(
         amt_bin,
         lang="eng+ara",
@@ -1568,7 +1568,7 @@ def extract_amount_from_roi_with_keywords(amt_bin: np.ndarray) -> Optional[str]:
     if not keyword_rows:
         keyword_rows = [w for w in words if secondary_keyword_regex.search(w[0])]
 
-    candidates: List[Tuple[int, str]] = []
+    candidates: list[tuple[int, str]] = []
     for token, x, y, ww, hh in words:
         parsed = parse_amount_candidates(token)
         if not parsed:
@@ -1598,7 +1598,7 @@ def _normalize_steg_summary_amount_text(raw: str) -> str:
     return t.lower()
 
 
-def extract_montant_from_summary_text(image: np.ndarray) -> Optional[str]:
+def extract_montant_from_summary_text(image: np.ndarray) -> str | None:
     """
     Zone recapitulatif STEG (totaux, arrieres, montant a payer). OCR texte libre + regex.
     """
@@ -1626,7 +1626,7 @@ def extract_montant_from_summary_text(image: np.ndarray) -> Optional[str]:
             return m.group(1)
 
     # Lignes contenant clairement le libellé de paiement : prendre le plus grand montant plausible.
-    line_hits: List[str] = []
+    line_hits: list[str] = []
     pay_line_re = re.compile(
         r"montant\s*[àa]?\s*payer|\(\s*19\s*\)|المبلغ\s*المطلوب",
         re.IGNORECASE,
@@ -1645,7 +1645,7 @@ def extract_montant_from_summary_text(image: np.ndarray) -> Optional[str]:
         return max(line_hits, key=amount_to_millimes)
 
     # OCR sans virgule: « | 777000 | » ou 6 chiffres se terminant par 000
-    pipe_amounts: List[str] = []
+    pipe_amounts: list[str] = []
     for m in re.finditer(r"\|\s*(\d{6})\s*\|", txt):
         digits = m.group(1)
         if digits.endswith("000"):
@@ -1665,7 +1665,7 @@ def extract_montant_from_summary_text(image: np.ndarray) -> Optional[str]:
     return None
 
 
-def extract_montant_a_payer_line_strict(image: np.ndarray) -> Optional[str]:
+def extract_montant_a_payer_line_strict(image: np.ndarray) -> str | None:
     """
     Ne prend un montant que sur une ligne ou figurent ensemble les libelles
     « Montant a payer » / « المبلغ المطلوب » (evite « Priere de payer » etc.).
@@ -1679,7 +1679,7 @@ def extract_montant_a_payer_line_strict(image: np.ndarray) -> Optional[str]:
         output_type=Output.DICT,
     )
     h, _w = gray.shape
-    words: List[Tuple[str, int, int, int, int]] = []
+    words: list[tuple[str, int, int, int, int]] = []
     n = len(data["text"])
     for i in range(n):
         token = normalize_digits((data["text"][i] or "").strip())
@@ -1701,7 +1701,7 @@ def extract_montant_a_payer_line_strict(image: np.ndarray) -> Optional[str]:
         return None
 
     y_tol = max(12, int(0.018 * h))
-    candidates: List[str] = []
+    candidates: list[str] = []
 
     for idx, (token, x, y, ww, hh) in enumerate(words):
         if not re.search(r"payer|المطلوب", token, re.IGNORECASE):
@@ -1718,7 +1718,7 @@ def extract_montant_a_payer_line_strict(image: np.ndarray) -> Optional[str]:
         ):
             continue
         # STEG récent : montant souvent à droite du libellé dans un tableau, pas seulement à gauche.
-        line_amounts: List[str] = []
+        line_amounts: list[str] = []
         for w in line:
             for a in parse_amount_candidates(w[0]):
                 if is_plausible_steg_line_amount(a):
@@ -1731,7 +1731,7 @@ def extract_montant_a_payer_line_strict(image: np.ndarray) -> Optional[str]:
     return max(candidates, key=amount_to_millimes)
 
 
-def extract_amount_near_keywords(image: np.ndarray) -> Optional[str]:
+def extract_amount_near_keywords(image: np.ndarray) -> str | None:
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (3, 3), 0)
     data = pytesseract.image_to_data(
@@ -1771,7 +1771,7 @@ def extract_amount_near_keywords(image: np.ndarray) -> Optional[str]:
     if not keywords:
         return None
 
-    amount_candidates: List[str] = []
+    amount_candidates: list[str] = []
     for _, kx, ky, kw, kh in keywords:
         ky_center = ky + kh // 2
         y_tol = int(0.06 * h)
@@ -1789,7 +1789,7 @@ def extract_amount_near_keywords(image: np.ndarray) -> Optional[str]:
     return choose_payment_amount(amount_candidates)
 
 
-def extract_reference_near_keywords(image: np.ndarray) -> Optional[str]:
+def extract_reference_near_keywords(image: np.ndarray) -> str | None:
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (3, 3), 0)
     data = pytesseract.image_to_data(
@@ -1828,7 +1828,7 @@ def extract_reference_near_keywords(image: np.ndarray) -> Optional[str]:
         y_tol = int(0.05 * h)
         x_left = max(0, kx - int(0.03 * w))
         x_right = min(w, kx + kw + int(0.5 * w))
-        line_tokens: List[Tuple[int, str]] = []
+        line_tokens: list[tuple[int, str]] = []
         for token, x, y, ww, hh in words:
             y_center = y + hh // 2
             if abs(y_center - ky_center) > y_tol:
@@ -1847,7 +1847,7 @@ def extract_reference_near_keywords(image: np.ndarray) -> Optional[str]:
     return None
 
 
-def extract_reference_from_top_keyword(image: np.ndarray) -> Optional[str]:
+def extract_reference_from_top_keyword(image: np.ndarray) -> str | None:
     top = crop_relative(image, 0.0, 0.0, 1.0, 0.38)
     gray = cv2.cvtColor(top, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (3, 3), 0)
@@ -1880,14 +1880,14 @@ def extract_reference_from_top_keyword(image: np.ndarray) -> Optional[str]:
     if not keys:
         return None
 
-    candidates: List[str] = []
+    candidates: list[str] = []
     h, w = gray.shape
     for _, kx, ky, kw, kh in keys:
         y_center = ky + kh // 2
         y_tol = int(0.06 * h)
         x_left = kx + kw
         x_right = min(w, kx + kw + int(0.45 * w))
-        row_digits: List[Tuple[int, str]] = []
+        row_digits: list[tuple[int, str]] = []
         for token, x, y, ww, hh in words:
             yc = y + hh // 2
             if abs(yc - y_center) > y_tol:
@@ -1907,7 +1907,7 @@ def extract_reference_from_top_keyword(image: np.ndarray) -> Optional[str]:
     return vote_best_reference(candidates)
 
 
-def extract_reference_global_fallback(image: np.ndarray) -> Optional[str]:
+def extract_reference_global_fallback(image: np.ndarray) -> str | None:
     """
     Fallback robuste: OCR sur grandes zones, puis extraction de toutes les
     references candidates (format 5-3-1), vote final.
@@ -1916,7 +1916,7 @@ def extract_reference_global_fallback(image: np.ndarray) -> Optional[str]:
         (0.00, 0.00, 1.00, 0.45),
         (0.05, 0.05, 0.95, 0.35),
     ]
-    cands: List[str] = []
+    cands: list[str] = []
     for x1, y1, x2, y2 in rois:
         roi = crop_relative(image, x1, y1, x2, y2)
         if roi.size == 0:
@@ -1935,17 +1935,17 @@ def extract_batch(
     input_dir: Path,
     output_json: Path,
     output_csv: Path,
-    debug_dir: Optional[Path] = None,
-    limit: Optional[int] = None,
-    progress_callback: Optional[Callable[[int, int, str], None]] = None,
-) -> List[ExtractionResult]:
+    debug_dir: Path | None = None,
+    limit: int | None = None,
+    progress_callback: Callable[[int, int, str], None] | None = None,
+) -> list[ExtractionResult]:
     configure_tesseract()
     supported = {".jpg", ".jpeg", ".png", ".tif", ".tiff"}
     images = sorted([p for p in input_dir.iterdir() if p.is_file() and p.suffix.lower() in supported])
     if limit is not None and limit > 0:
         images = images[:limit]
 
-    results: List[ExtractionResult] = []
+    results: list[ExtractionResult] = []
     total = len(images)
     for idx, img_path in enumerate(images, start=1):
         if progress_callback:

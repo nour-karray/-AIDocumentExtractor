@@ -7,11 +7,11 @@ import re
 import subprocess
 import sys
 import time
+from collections.abc import Callable
 from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable
-
+from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT_ROOT = PROJECT_ROOT / "outputs" / "qa_validation"

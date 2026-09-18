@@ -10,7 +10,7 @@ import tempfile
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -22,7 +22,10 @@ from pipelines.extract_medical_report_gemini import extract_medical_report
 from pipelines.extract_receipt_gemini import extract_receipt
 from pipelines.extract_supplier_invoice_gemini import extract_supplier_invoice
 from src.config import AppConfig, load_config
-from src.extraction.steg_invoice_extractor import configure_tesseract, derive_reference_from_footer_compact
+from src.extraction.steg_invoice_extractor import (
+    configure_tesseract,
+    derive_reference_from_footer_compact,
+)
 from src.services.document_preprocessing import preprocess_document
 from src.services.document_router import detect_document_type, process_any_document
 from src.services.extraction_history import (

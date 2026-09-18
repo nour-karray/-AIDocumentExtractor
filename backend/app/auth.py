@@ -4,7 +4,7 @@ import base64
 import hashlib
 import hmac
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import jwt
@@ -15,7 +15,6 @@ from pydantic import BaseModel, Field
 
 from backend.app.core import get_config
 from src.config import AppConfig
-
 
 TOKEN_ALGORITHM = "HS256"
 PASSWORD_HASH_ALGORITHM = "pbkdf2_sha256"
@@ -116,7 +115,7 @@ def require_auth(
 
 def create_access_token(cfg: AppConfig, username: str) -> tuple[str, str]:
     validate_auth_config(cfg)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     expires_at = now + timedelta(minutes=cfg.auth_token_ttl_minutes)
     token = jwt.encode(
         {"sub": username, "iat": now, "exp": expires_at},

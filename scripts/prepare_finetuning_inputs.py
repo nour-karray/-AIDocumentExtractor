@@ -6,7 +6,6 @@ import re
 from pathlib import Path
 from typing import Any
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 FINE_ROOT = PROJECT_ROOT / "Data" / "finetuning"
 INPUTS_ROOT = FINE_ROOT / "processed" / "inputs"

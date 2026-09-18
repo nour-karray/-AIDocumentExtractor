@@ -9,9 +9,9 @@ import json
 import os
 import re
 import unicodedata
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -22,7 +22,6 @@ from src.extraction.steg_invoice_extractor import (
     crop_relative,
     deskew_image,
     normalize_digits,
-    ocr_text,
     preprocess_roi,
     read_image,
 )
@@ -96,8 +95,8 @@ def _strip_accents(value: str) -> str:
     return "".join(ch for ch in normalized if not unicodedata.combining(ch))
 
 
-def _build_ocr_variants(gray: np.ndarray) -> List[np.ndarray]:
-    variants: List[np.ndarray] = [gray]
+def _build_ocr_variants(gray: np.ndarray) -> list[np.ndarray]:
+    variants: list[np.ndarray] = [gray]
     try:
         up = cv2.resize(gray, None, fx=1.6, fy=1.6, interpolation=cv2.INTER_CUBIC)
         variants.append(up)
@@ -134,25 +133,25 @@ def _enhance_medical_scan(image: np.ndarray) -> np.ndarray:
 @dataclass
 class MedicalAnalysisResult:
     file_name: str
-    reference_dossier: Optional[str]
-    date_prelevement: Optional[str]
-    date_resultat: Optional[str]
-    laboratoire: Optional[str]
-    patient_nom: Optional[str]
+    reference_dossier: str | None
+    date_prelevement: str | None
+    date_resultat: str | None
+    laboratoire: str | None
+    patient_nom: str | None
     # Bilan biologique: parametre, valeur, unite, valeurs_normales (priorite metier)
-    resultats_analyses: List[Dict[str, Optional[str]]]
+    resultats_analyses: list[dict[str, str | None]]
     confidence_note: str
 
 
-def _validate_ymd(y: int, mo: int, d: int) -> Optional[str]:
+def _validate_ymd(y: int, mo: int, d: int) -> str | None:
     if mo < 1 or mo > 12 or d < 1 or d > 31 or y < 1990 or y > 2100:
         return None
     return f"{y:04d}-{mo:02d}-{d:02d}"
 
 
-def _parse_iso_dates(text: str) -> List[str]:
+def _parse_iso_dates(text: str) -> list[str]:
     text = normalize_digits(text)
-    out: List[str] = []
+    out: list[str] = []
     for m in re.finditer(
         r"(20\d{2})\s*[./\s-]\s*(\d{1,2})\s*[./\s-]\s*(\d{1,2})", text
     ):
@@ -168,7 +167,7 @@ def _parse_iso_dates(text: str) -> List[str]:
     return out
 
 
-def _date_near(text: str, keywords: List[str], window: int = 100) -> Optional[str]:
+def _date_near(text: str, keywords: list[str], window: int = 100) -> str | None:
     tl = text.lower()
     for kw in keywords:
         i = tl.find(kw.lower())
@@ -181,7 +180,7 @@ def _date_near(text: str, keywords: List[str], window: int = 100) -> Optional[st
     return None
 
 
-def _extract_dates_semantic(text: str) -> Tuple[Optional[str], Optional[str]]:
+def _extract_dates_semantic(text: str) -> tuple[str | None, str | None]:
     """(date_prelevement, date_resultat) via mots-cles FR usuels."""
     dp = _date_near(
         text,
@@ -222,7 +221,7 @@ def _extract_dates_semantic(text: str) -> Tuple[Optional[str], Optional[str]]:
     return dp, dr
 
 
-def _extract_reference(text: str) -> Optional[str]:
+def _extract_reference(text: str) -> str | None:
     t = normalize_digits(re.sub(r"\s+", " ", text))
     patterns = [
         r"(?:n[°o]?\s*(?:dossier|patient|analyse)?|ref\.?|reference|référence|code)\s*[.:]?\s*([A-Z0-9][A-Z0-9\s\-]{3,28})",
@@ -240,7 +239,7 @@ def _extract_reference(text: str) -> Optional[str]:
     return None
 
 
-def _extract_patient(text: str) -> Optional[str]:
+def _extract_patient(text: str) -> str | None:
     patterns = [
         r"(?:patient|nom\s*(?:et)?\s*pr[eé]nom|identit[eé]|beneficiaire|bénéficiaire)\s*[.:]?\s*(.+)",
     ]
@@ -267,7 +266,7 @@ def _ocr_body_region(image: np.ndarray) -> str:
     if body.size == 0:
         return ""
     gray = cv2.cvtColor(body, cv2.COLOR_BGR2GRAY)
-    candidates: List[str] = []
+    candidates: list[str] = []
     for v in _build_ocr_variants(gray):
         for psm in (4, 6, 11):
             txt = normalize_digits(_ocr_medical(v, f"--oem 3 --psm {psm}"))
@@ -281,7 +280,7 @@ def _ocr_body_region(image: np.ndarray) -> str:
     return max(candidates, key=_medical_text_score)
 
 
-def _parse_ligne_resultat_bio(line: str) -> Optional[Dict[str, Optional[str]]]:
+def _parse_ligne_resultat_bio(line: str) -> dict[str, str | None] | None:
     """Une ligne type bilan: nom d'analyse + valeur numerique + unite (+ parfois V.N.)."""
     line = re.sub(r"[·•]", ".", line)
     line = re.sub(r"\.{3,}", " ", line)
@@ -415,7 +414,7 @@ _KNOWN_MEDICAL_LABELS = [
 ]
 
 
-def _clean_param_label(raw: Optional[str]) -> Optional[str]:
+def _clean_param_label(raw: str | None) -> str | None:
     if not raw:
         return None
     x = normalize_digits(raw).lower()
@@ -442,8 +441,8 @@ def _clean_param_label(raw: Optional[str]) -> Optional[str]:
     return x
 
 
-def _post_clean_resultats(rows: List[Dict[str, Optional[str]]]) -> List[Dict[str, Optional[str]]]:
-    cleaned: List[Dict[str, Optional[str]]] = []
+def _post_clean_resultats(rows: list[dict[str, str | None]]) -> list[dict[str, str | None]]:
+    cleaned: list[dict[str, str | None]] = []
     seen = set()
     for r in rows:
         label = _clean_param_label(r.get("parametre"))
@@ -468,10 +467,10 @@ def _post_clean_resultats(rows: List[Dict[str, Optional[str]]]) -> List[Dict[str
     return cleaned
 
 
-def _extract_resultats_analyses(body_text: str, full_text: str) -> List[Dict[str, Optional[str]]]:
+def _extract_resultats_analyses(body_text: str, full_text: str) -> list[dict[str, str | None]]:
     """Parse les lignes OCR pour extraire le bilan (priorite sur le corps du document)."""
     seen: set = set()
-    out: List[Dict[str, Optional[str]]] = []
+    out: list[dict[str, str | None]] = []
     for block in (body_text, full_text):
         if not block:
             continue
@@ -487,7 +486,7 @@ def _extract_resultats_analyses(body_text: str, full_text: str) -> List[Dict[str
     return _post_clean_resultats(out)
 
 
-def _extract_resultats_from_tesseract_data(gray: np.ndarray) -> List[Dict[str, Optional[str]]]:
+def _extract_resultats_from_tesseract_data(gray: np.ndarray) -> list[dict[str, str | None]]:
     """
     Extraction complémentaire ligne par ligne via image_to_data.
     Plus robuste que image_to_string sur documents bruités.
@@ -503,7 +502,7 @@ def _extract_resultats_from_tesseract_data(gray: np.ndarray) -> List[Dict[str, O
     except Exception:
         return []
 
-    rows: List[tuple[int, int, str]] = []
+    rows: list[tuple[int, int, str]] = []
     n = len(data.get("text", []))
     for i in range(n):
         token = normalize_digits((data["text"][i] or "").strip())
@@ -523,7 +522,7 @@ def _extract_resultats_from_tesseract_data(gray: np.ndarray) -> List[Dict[str, O
         return []
 
     rows.sort(key=lambda x: (x[0], x[1]))
-    lines: List[List[tuple[int, int, str]]] = []
+    lines: list[list[tuple[int, int, str]]] = []
     y_tol = max(10, int(gray.shape[0] * 0.015))
     for r in rows:
         if not lines:
@@ -535,7 +534,7 @@ def _extract_resultats_from_tesseract_data(gray: np.ndarray) -> List[Dict[str, O
         else:
             lines.append([r])
 
-    parsed: List[Dict[str, Optional[str]]] = []
+    parsed: list[dict[str, str | None]] = []
     for line in lines:
         txt = " ".join(t[2] for t in sorted(line, key=lambda x: x[1]))
         row = _parse_ligne_resultat_bio(txt)
@@ -554,7 +553,7 @@ def _looks_like_reference_range(text: str) -> bool:
     return bool(re.fullmatch(r"\d{1,4}(?:\.\d{1,3})?\s*(?:-|a|Ã )\s*\d{1,4}(?:\.\d{1,3})?", txt, re.I))
 
 
-def _normalize_reference_range_token(text: str) -> Optional[str]:
+def _normalize_reference_range_token(text: str) -> str | None:
     txt = normalize_digits(text or "").strip().replace(",", ".")
     match = re.fullmatch(
         r"(\d{1,4}(?:\.\d{1,3})?)\s*(?:-|a|Ã )\s*(\d{1,4}(?:\.\d{1,3})?)",
@@ -574,7 +573,7 @@ def _normalize_reference_range_token(text: str) -> Optional[str]:
     return f"{fix_number(match.group(1))}-{fix_number(match.group(2))}"
 
 
-def _clean_unit_token(text: str) -> Optional[str]:
+def _clean_unit_token(text: str) -> str | None:
     txt = normalize_digits(text or "").strip()
     txt = txt.replace("I", "l").replace("ı", "l").replace("1", "l")
     txt = re.sub(r"\s+", "", txt)
@@ -595,7 +594,7 @@ def _clean_unit_token(text: str) -> Optional[str]:
     return None
 
 
-def _infer_unit_for_label(label: str) -> Optional[str]:
+def _infer_unit_for_label(label: str) -> str | None:
     low = _strip_accents(label).lower()
     if any(k in low for k in ("glycem", "cholesterol", "triglycer")):
         return "g/l"
@@ -604,7 +603,7 @@ def _infer_unit_for_label(label: str) -> Optional[str]:
     return None
 
 
-def _table_label_from_text(text: str) -> Optional[str]:
+def _table_label_from_text(text: str) -> str | None:
     compact = _strip_accents(text or "").lower()
     compact = re.sub(r"[^a-z0-9/%\s]", " ", compact)
     compact = re.sub(r"\s+", " ", compact).strip()
@@ -631,11 +630,11 @@ def _table_label_from_text(text: str) -> Optional[str]:
     return None
 
 
-def _group_ocr_tokens_into_rows(tokens: List[Dict[str, object]], image_height: int) -> List[List[Dict[str, object]]]:
+def _group_ocr_tokens_into_rows(tokens: list[dict[str, object]], image_height: int) -> list[list[dict[str, object]]]:
     if not tokens:
         return []
     y_tol = max(14, int(image_height * 0.012))
-    rows: List[List[Dict[str, object]]] = []
+    rows: list[list[dict[str, object]]] = []
     for token in sorted(tokens, key=lambda t: (int(t["y"]), int(t["x"]))):
         if not rows:
             rows.append([token])
@@ -648,7 +647,7 @@ def _group_ocr_tokens_into_rows(tokens: List[Dict[str, object]], image_height: i
     return [sorted(row, key=lambda t: int(t["x"])) for row in rows]
 
 
-def extract_result_rows_from_medical_ocr_data(gray: np.ndarray) -> List[Dict[str, Optional[str]]]:
+def extract_result_rows_from_medical_ocr_data(gray: np.ndarray) -> list[dict[str, str | None]]:
     """
     Rescue OCR par positions pour les tableaux de biologie.
 
@@ -668,7 +667,7 @@ def extract_result_rows_from_medical_ocr_data(gray: np.ndarray) -> List[Dict[str
         return []
 
     height, width = gray.shape[:2]
-    tokens: List[Dict[str, object]] = []
+    tokens: list[dict[str, object]] = []
     for i, raw in enumerate(data.get("text", [])):
         text = normalize_digits((raw or "").strip())
         if not text:
@@ -698,7 +697,7 @@ def extract_result_rows_from_medical_ocr_data(gray: np.ndarray) -> List[Dict[str
         if label:
             label_rows.append((label, int(np.median([int(t["y"]) for t in row])), row_text))
 
-    out: list[dict[str, Optional[str]]] = []
+    out: list[dict[str, str | None]] = []
     seen: set[str] = set()
     x_min = int(width * 0.30)
     x_max = int(width * 0.68)
@@ -765,7 +764,7 @@ def extract_result_rows_from_medical_ocr_data(gray: np.ndarray) -> List[Dict[str
     return _post_clean_resultats(out)
 
 
-def _extract_laboratoire(full_text: str, header_text: str) -> Optional[str]:
+def _extract_laboratoire(full_text: str, header_text: str) -> str | None:
     for block in (full_text, header_text):
         m = re.search(
             r"(?:laboratoire|labo\.?|centre\s+(?:de\s+)?(?:analyses|biologie)|polyclinique|clinique|hopital|hôpital)\s*[.:]?\s*([^\n]{5,100})",
@@ -801,8 +800,8 @@ def _ocr_medical(img: np.ndarray, config: str) -> str:
     return ""
 
 
-def _ocr_medical_best(img: np.ndarray, psm_values: Tuple[int, ...] = (6, 4, 11)) -> str:
-    candidates: List[str] = []
+def _ocr_medical_best(img: np.ndarray, psm_values: tuple[int, ...] = (6, 4, 11)) -> str:
+    candidates: list[str] = []
     variants = _build_ocr_variants(img)
     if _medical_fast_ocr_enabled():
         variants = variants[:2]
@@ -834,7 +833,7 @@ def extract_combined_ocr_text(image_path: Path) -> str:
 
 
 def extract_fields_from_medical(
-    image_path: Path, debug_dir: Optional[Path] = None
+    image_path: Path, debug_dir: Path | None = None
 ) -> MedicalAnalysisResult:
     configure_tesseract()
     raw = read_image(image_path)
@@ -924,10 +923,10 @@ def extract_batch_medical(
     input_dir: Path,
     output_json: Path,
     output_csv: Path,
-    debug_dir: Optional[Path] = None,
-    limit: Optional[int] = None,
-    progress_callback: Optional[Callable[[int, int, str], None]] = None,
-) -> List[MedicalAnalysisResult]:
+    debug_dir: Path | None = None,
+    limit: int | None = None,
+    progress_callback: Callable[[int, int, str], None] | None = None,
+) -> list[MedicalAnalysisResult]:
     configure_tesseract()
     supported = {".jpg", ".jpeg", ".png", ".tif", ".tiff"}
     images = sorted(
@@ -936,7 +935,7 @@ def extract_batch_medical(
     if limit is not None and limit > 0:
         images = images[:limit]
 
-    results: List[MedicalAnalysisResult] = []
+    results: list[MedicalAnalysisResult] = []
     total = len(images)
     for idx, img_path in enumerate(images, start=1):
         if progress_callback:

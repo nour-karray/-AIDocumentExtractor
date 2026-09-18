@@ -14,8 +14,11 @@ import pytesseract
 
 from src.extraction.steg_invoice_extractor import configure_tesseract, read_image
 from src.services.document_preprocessing import preprocess_document
-from src.utils.arabic_invoice_utils import clean_arabic_ocr_text, normalize_numeric_digits, rtl_script_ratio
-
+from src.utils.arabic_invoice_utils import (
+    clean_arabic_ocr_text,
+    normalize_numeric_digits,
+    rtl_script_ratio,
+)
 
 _ROUTER_OCR_PSMS = (6, 4, 11)
 _ROUTER_OCR_MIN_SIDE = 1050

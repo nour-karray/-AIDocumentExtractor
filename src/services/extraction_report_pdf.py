@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import platform
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
 from typing import Any
@@ -89,7 +89,7 @@ def _fmt_report_datetime(iso_str: str | None) -> str:
     try:
         dt = datetime.fromisoformat(str(iso_str).replace("Z", "+00:00"))
         if dt.tzinfo:
-            dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+            dt = dt.astimezone(UTC).replace(tzinfo=None)
         return dt.strftime("%d/%m/%Y %H:%M")
     except (ValueError, TypeError):
         return str(iso_str)[:19]

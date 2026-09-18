@@ -5,7 +5,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SPLITS_ROOT = PROJECT_ROOT / "Data" / "finetuning" / "splits"
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "models" / "qwen2_5_docuai_lora"
