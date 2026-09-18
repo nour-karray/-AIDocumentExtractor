@@ -85,6 +85,7 @@ def _ensure_receipt_schema(data: Dict[str, Any]) -> Dict[str, Any]:
 def extract_receipt(
     image_path: str | Path,
     *,
+    api_key: str | None = None,
     model: Optional[str] = None,
     retries: int = 3,
     retry_delay_sec: float = 2.0,
@@ -99,7 +100,7 @@ def extract_receipt(
     if not path.is_file():
         raise ValueError(f"Chemin invalide (pas un fichier): {path}")
 
-    api_key = os.getenv("GEMINI_API_KEY")
+    api_key = (api_key or os.getenv("GEMINI_API_KEY") or "").strip()
     if not api_key:
         raise EnvironmentError(
             "GEMINI_API_KEY introuvable. Définissez la variable d'environnement."

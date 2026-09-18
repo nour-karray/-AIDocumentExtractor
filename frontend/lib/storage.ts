@@ -1,19 +1,9 @@
 export const storageKeys = {
-  theme: "docuai-theme",
-  uiSettings: "docuai-ui-settings",
-  geminiKey: "docuai-gemini-key",
-  geminiModel: "docuai-gemini-model",
-  aiProvider: "docuai-ai-provider",
-  openaiKey: "docuai-openai-key",
-  openaiModel: "docuai-openai-model",
-  anthropicKey: "docuai-anthropic-key",
-  anthropicModel: "docuai-anthropic-model",
-  ollamaHost: "docuai-ollama-host",
-  localModel: "docuai-local-model",
-  lastExtraction: "docuai-last-extraction",
-  activeModels: "docuai-active-models",
-  defaultMethod: "docuai-default-method",
-  authToken: "docuai-auth-token"
+  theme: "docia-theme",
+  uiSettings: "docia-ui-settings",
+  lastExtraction: "docia-last-extraction",
+  defaultMethod: "docia-default-method",
+  authToken: "docia-auth-token"
 };
 
 export function readStoredValue(key: string, fallback = "") {

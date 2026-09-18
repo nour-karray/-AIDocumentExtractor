@@ -20,7 +20,7 @@ PYTHON_EXE = Path(sys.executable)
 
 def _default_env() -> dict[str, str]:
     env = os.environ.copy()
-    env.setdefault("DOCUAI_EXTRACTION_TIMEOUT_SECONDS", "180")
+    env.setdefault("DOCIA_EXTRACTION_TIMEOUT_SECONDS", "180")
     env.setdefault("LOCAL_PIPELINE_PADDLEOCR_TIMEOUT_SECONDS", "8")
     env.setdefault("LOCAL_PIPELINE_FAST_OCR_TIMEOUT_SECONDS", "12")
     env.setdefault("LOCAL_PIPELINE_CONTENT_CHARS", "12000")
@@ -493,7 +493,7 @@ def run_all(selected_cases: list[str] | None = None) -> dict[str, Any]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Validation QA des methodes d'extraction DocuAI.")
+    parser = argparse.ArgumentParser(description="Validation QA des methodes d'extraction DocIA.")
     parser.add_argument("--case", choices=sorted(CASES))
     parser.add_argument("--cases", nargs="*", choices=sorted(CASES))
     parser.add_argument("--output-root", type=Path)

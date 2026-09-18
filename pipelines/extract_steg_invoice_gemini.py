@@ -61,6 +61,7 @@ def _ensure_steg_schema(data: Dict[str, Any]) -> Dict[str, Any]:
 def extract_steg_invoice(
     image_path: str | Path,
     *,
+    api_key: str | None = None,
     model: Optional[str] = None,
     retries: int = 3,
     retry_delay_sec: float = 2.0,
@@ -77,7 +78,7 @@ def extract_steg_invoice(
     if path.suffix.lower() == ".pdf":
         raise ValueError("Utilisez une image (JPG, PNG, …), pas un PDF.")
 
-    api_key = os.getenv("GEMINI_API_KEY")
+    api_key = (api_key or os.getenv("GEMINI_API_KEY") or "").strip()
     if not api_key:
         raise EnvironmentError(
             "GEMINI_API_KEY introuvable. Définissez la variable d'environnement."

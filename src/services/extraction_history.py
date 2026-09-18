@@ -58,7 +58,6 @@ def _ensure_history_schema(conn: sqlite3.Connection) -> None:
         "detected_kind": "TEXT",
         "source_mime": "TEXT",
         "source_size": "INTEGER",
-        "source_blob": "BLOB",
     }
     for name, definition in columns.items():
         if name not in existing:
@@ -91,12 +90,23 @@ def save_extraction(
     fname = f"{ts}_{_safe_stem(source_filename)}.json"
     path = sub / fname
     source_path: Path | None = None
-    if source_bytes is not None:
+    if source_bytes is not None and cfg.store_source_files:
         src_ext = Path(source_filename).suffix or ".bin"
         source_path = sub / f"{ts}_{_safe_stem(source_filename)}{src_ext}"
         source_path.write_bytes(source_bytes)
 
-    doc = dict(payload)
+    def sanitize(value: Any) -> Any:
+        if isinstance(value, dict):
+            return {
+                key: sanitize(item)
+                for key, item in value.items()
+                if cfg.store_raw_text or key.lower() not in {"raw", "raw_text", "source_text", "ocr_text"}
+            }
+        if isinstance(value, list):
+            return [sanitize(item) for item in value]
+        return value
+
+    doc = sanitize(dict(payload)) if status == "ok" else {}
     doc.pop("_meta", None)
     guessed_mime, _ = mimetypes.guess_type(source_filename)
     source_mime = source_mime or guessed_mime or "application/octet-stream"
@@ -122,9 +132,9 @@ def save_extraction(
             """
             INSERT INTO extraction_history (
                 kind, source_filename, saved_at, relative_path, payload_json,
-                status, error_message, detected_kind, source_mime, source_size, source_blob
+                status, error_message, detected_kind, source_mime, source_size
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 kind,
@@ -137,7 +147,6 @@ def save_extraction(
                 detected_kind,
                 source_mime,
                 len(source_bytes) if source_bytes is not None else None,
-                source_bytes,
             ),
         )
 
@@ -158,8 +167,7 @@ def list_history_entries(cfg: AppConfig) -> list[dict[str, Any]]:
                     """
                     SELECT
                         id, kind, source_filename, saved_at, relative_path, payload_json,
-                        status, error_message, detected_kind, source_mime, source_size,
-                        source_blob IS NOT NULL AS has_source_blob
+                        status, error_message, detected_kind, source_mime, source_size
                     FROM extraction_history
                     ORDER BY datetime(saved_at) DESC, id DESC
                     """
@@ -187,7 +195,7 @@ def list_history_entries(cfg: AppConfig) -> list[dict[str, Any]]:
                         "detected_kind": row["detected_kind"],
                         "source_mime": row["source_mime"],
                         "source_size": row["source_size"],
-                        "has_source_blob": bool(row["has_source_blob"]),
+                        "has_source_blob": False,
                     }
                 )
             if rows:
@@ -299,28 +307,3 @@ def delete_history_entry(cfg: AppConfig, entry: dict[str, Any]) -> tuple[bool, s
 
     return True, "Document deplace vers la corbeille."
 
-
-def load_source_blob(cfg: AppConfig, entry: dict[str, Any]) -> tuple[bytes, str] | None:
-    row_id = entry.get("id")
-    if not isinstance(row_id, int):
-        return None
-    db_path = cfg.extraction_history_db_path
-    if not db_path.is_file():
-        return None
-    try:
-        with sqlite3.connect(db_path) as conn:
-            conn.row_factory = sqlite3.Row
-            _ensure_history_schema(conn)
-            row = conn.execute(
-                """
-                SELECT source_blob, source_mime
-                FROM extraction_history
-                WHERE id = ?
-                """,
-                (row_id,),
-            ).fetchone()
-    except Exception:
-        return None
-    if row is None or row["source_blob"] is None:
-        return None
-    return bytes(row["source_blob"]), str(row["source_mime"] or "application/octet-stream")

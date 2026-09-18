@@ -32,7 +32,7 @@ def _progress(idx: int, total: int, file_name: str) -> None:
 def main() -> None:
     args = _parse_args()
     root = ROOT
-    input_dir = root / "Data" / "raw_Data" / "electricite"
+    input_dir = root / "data" / "raw" / "electricite"
     output_json = root / "outputs" / "extraction" / "steg_extraction_results.json"
     output_csv = root / "outputs" / "extraction" / "steg_extraction_results.csv"
     debug_dir = None if args.no_debug else (root / "outputs" / "extraction" / "debug_rois")

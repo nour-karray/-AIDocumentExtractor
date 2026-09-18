@@ -11,57 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { fetchDashboard } from "@/lib/api";
-import type { ChartDatum, DashboardPayload, TrendSeries } from "@/lib/types";
-
-const PRESENTATION_VOLUME_SCALE = 4;
-const PRESENTATION_OVERVIEW = {
-  totalDocuments: 106,
-  successCount: 100,
-  errorCount: 6,
-  successRate: 94.3,
-  detectedTypes: 10
-};
-
-function scalePresentationCount(value: number) {
-  return value * PRESENTATION_VOLUME_SCALE;
-}
-
-function scalePresentationChart(data: ChartDatum[]) {
-  return data.map((item) => ({
-    ...item,
-    value: scalePresentationCount(item.value)
-  }));
-}
-
-function scalePresentationTrend(series: TrendSeries[]) {
-  return series.map((item) => ({
-    ...item,
-    points: item.points.map((point) => ({
-      ...point,
-      value: scalePresentationCount(point.value)
-    }))
-  }));
-}
-
-const PRESENTATION_BY_METHOD = scalePresentationChart([
-  { label: "Gemini API", value: 58 },
-  { label: "Pipeline IA local", value: 22 },
-  { label: "OCR local", value: 19 },
-  { label: "Dataset test annote", value: 7 }
-]);
-
-const PRESENTATION_BY_KIND = scalePresentationChart([
-  { label: "Analyse medicale (Gemini)", value: 23 },
-  { label: "Analyse medicale (Docling + Qwen local)", value: 8 },
-  { label: "Ticket de caisse", value: 16 },
-  { label: "Traitement a verifier", value: 6 },
-  { label: "Facture STEG (Gemini)", value: 9 },
-  { label: "Facture STEG (Docling + Qwen local)", value: 12 },
-  { label: "Facture fournisseur", value: 6 },
-  { label: "Facture STEG (OCR local)", value: 8 },
-  { label: "Analyse medicale (OCR structure)", value: 11 },
-  { label: "Ticket de caisse (dataset test)", value: 7 }
-]);
+import type { DashboardPayload } from "@/lib/types";
 
 function completenessLabel(score: number | null) {
   if (score === null || Number.isNaN(score)) {
@@ -110,16 +60,12 @@ export default function DashboardPage() {
   }, []);
 
   const recentRows = data?.recentActivity ?? [];
-  const presentationTrendSeries = useMemo(
-    () => scalePresentationTrend(data?.distributions.trendSeries ?? []),
-    [data]
-  );
 
   return (
     <div className="space-y-5">
       <PageHeader
         eyebrow="1. TABLEAU DE BORD (Dashboard)"
-        title="Bonjour, Admin !"
+        title="Tableau de bord"
         description="Voici l'etat de vos documents traites et la qualite des resultats."
         action={
           <div className="flex flex-wrap items-center gap-2">
@@ -145,36 +91,36 @@ export default function DashboardPage() {
             <StatCard
               icon={<Workflow className="h-4 w-4" />}
               title="Documents traites"
-              value={String(scalePresentationCount(PRESENTATION_OVERVIEW.totalDocuments))}
+              value={String(data.overview.totalDocuments)}
               helper="Historique courant"
               sparkColor="#7c4dff"
             />
             <StatCard
               icon={<Trophy className="h-4 w-4" />}
               title="Succes"
-              value={String(scalePresentationCount(PRESENTATION_OVERVIEW.successCount))}
-              helper={`${PRESENTATION_OVERVIEW.successRate.toFixed(1)}% du total`}
+              value={String(data.overview.successCount)}
+              helper={`${data.overview.successRate.toFixed(1)}% du total`}
               sparkColor="#30c56f"
             />
             <StatCard
               icon={<ShieldAlert className="h-4 w-4" />}
               title="Erreurs"
-              value={String(scalePresentationCount(PRESENTATION_OVERVIEW.errorCount))}
+              value={String(data.overview.errorCount)}
               helper="Documents a verifier"
               sparkColor="#ff9a3d"
             />
             <StatCard
               icon={<Sparkles className="h-4 w-4" />}
               title="Taux de succes"
-              value={`${PRESENTATION_OVERVIEW.successRate.toFixed(0)}%`}
+              value={`${data.overview.successRate.toFixed(0)}%`}
               helper="Calcule sur l'historique"
               sparkColor="#a764ff"
             />
             <StatCard
               icon={<WalletCards className="h-4 w-4" />}
               title="Types detectes"
-              value={String(scalePresentationCount(PRESENTATION_OVERVIEW.detectedTypes))}
-              helper="Detections cumulees"
+              value={String(data.distributions.byKind.length)}
+              helper="Types presents dans l'historique"
               sparkColor="#5987ff"
             />
           </section>
@@ -247,7 +193,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <TrendLineChart series={presentationTrendSeries} />
+              <TrendLineChart series={data.distributions.trendSeries} />
             </Card>
           </section>
 
@@ -258,7 +204,7 @@ export default function DashboardPage() {
               </div>
               <div className="mt-5 space-y-4">
                 <div className="text-sm text-[#55617f] dark:text-[#b7c0dc]">
-                  {`${PRESENTATION_OVERVIEW.successRate.toFixed(1)}% de succes global sur l'historique courant.`}
+                  {`${data.overview.successRate.toFixed(1)}% de succes global sur l'historique courant.`}
                 </div>
                 <div className="text-sm text-[#55617f] dark:text-[#b7c0dc]">
                   Les meilleurs resultats sont gardes dans l'historique actif.
@@ -279,14 +225,14 @@ export default function DashboardPage() {
               <div className="mb-4 proto-title text-[15px] font-bold text-[#1b2440] dark:text-white">
                 Repartition par methode IA
               </div>
-              <DonutChart data={PRESENTATION_BY_METHOD} />
+              <DonutChart data={data.distributions.byMethod} />
             </Card>
 
             <Card>
               <div className="mb-4 proto-title text-[15px] font-bold text-[#1b2440] dark:text-white">
                 Documents par type
               </div>
-              <SimpleBars data={PRESENTATION_BY_KIND} />
+              <SimpleBars data={data.distributions.byKind} />
             </Card>
           </section>
         </>

@@ -440,7 +440,7 @@ def _dataset_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
 
 def _write_report(output_dir: Path, summary: dict[str, Any]) -> None:
     lines: list[str] = []
-    lines.append("# Evaluation quantitative des pipelines DocuAI")
+    lines.append("# Evaluation quantitative des pipelines DocIA")
     lines.append("")
     lines.append(f"Run: `{summary['run_id']}`")
     lines.append("")
@@ -594,7 +594,7 @@ def evaluate(split_path: Path, predictions_root: Path | None, output_root: Path)
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Calcule accuracy, precision, recall et F1 pour les sorties JSON des pipelines DocuAI."
+        description="Calcule accuracy, precision, recall et F1 pour les sorties JSON des pipelines DocIA."
     )
     parser.add_argument("--split", type=Path, default=DEFAULT_SPLIT_PATH)
     parser.add_argument(

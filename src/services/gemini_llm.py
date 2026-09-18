@@ -8,7 +8,11 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
+
+from google.genai import types
+
+from src.gemini_vision import generate_vision_json, guess_image_mime_type
 
 from src.models.schemas import (
     DocumentMetadata,
@@ -159,17 +163,7 @@ def analyze_medical_document_gemini(
     """
     Appelle Gemini avec texte OCR (+ image si chemin fourni et fichier image).
     """
-    try:
-        import google.generativeai as genai
-    except ImportError as e:
-        raise RuntimeError(
-            "Paquet google-generativeai manquant. Installez: pip install google-generativeai"
-        ) from e
-
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel(model_name)
-
-    user_parts: List[Union[str, Any]] = [
+    user_parts: List[Any] = [
         SYSTEM_PROMPT,
         "\n\n--- TEXTE OCR (peut être bruité) ---\n",
         ocr_text[:120_000] if ocr_text else "(vide)",
@@ -177,23 +171,27 @@ def analyze_medical_document_gemini(
 
     if image_path and image_path.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp", ".gif"}:
         try:
-            from PIL import Image
-
             user_parts.append("\n\n--- IMAGE DU DOCUMENT ---\n")
-            user_parts.append(Image.open(image_path))
+            user_parts.append(
+                types.Part.from_bytes(
+                    data=image_path.read_bytes(),
+                    mime_type=guess_image_mime_type(image_path),
+                )
+            )
         except Exception as exc:
             logger.warning("Impossible de charger l'image pour Gemini: %s", exc)
 
-    try:
-        gcfg = genai.GenerationConfig(response_mime_type="application/json")
-        resp = model.generate_content(user_parts, generation_config=gcfg)
-    except Exception:
-        resp = model.generate_content(user_parts)
-
-    if not resp or not getattr(resp, "text", None):
+    response_text = generate_vision_json(
+        api_key=api_key,
+        contents=user_parts,
+        model_preference=model_name,
+        retries=3,
+        retry_delay_sec=2.0,
+    )
+    if not response_text:
         raise RuntimeError("Réponse Gemini vide")
 
-    data = _parse_json_from_response(resp.text)
+    data = _parse_json_from_response(response_text)
     result = _gemini_dict_to_result(data, source_file=source_file)
     result.warnings.append(
         ProcessingWarning(code="GEMINI_OK", message=f"Modèle: {model_name}")

@@ -1,1 +1,1 @@
-"""FastAPI application package for the new DocuAI interface."""
+"""FastAPI application package for DocIA."""

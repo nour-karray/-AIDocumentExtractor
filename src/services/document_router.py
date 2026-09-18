@@ -439,7 +439,11 @@ def process_any_document(
             raise EnvironmentError(
                 "GEMINI_API_KEY requise pour l'extraction ticket (mode auto)."
             )
-        data = extract_receipt(file_path, model=gemini_model or os.getenv("GEMINI_MODEL"))
+        data = extract_receipt(
+            file_path,
+            api_key=gemini_api_key,
+            model=gemini_model or os.getenv("GEMINI_MODEL"),
+        )
         return {"kind": "receipt", "doc_type": "receipt", "result": data}
 
     if chosen == "steg":
@@ -451,7 +455,11 @@ def process_any_document(
                 raise ValueError(
                     "Extraction STEG via Gemini : fournissez une image (JPG, PNG, TIFF, WebP), pas un PDF."
                 )
-            data = extract_steg_invoice(file_path, model=gemini_model)
+            data = extract_steg_invoice(
+                file_path,
+                api_key=gemini_api_key,
+                model=gemini_model,
+            )
             steg_payload = {
                 "file_name": file_path.name,
                 **data,
@@ -489,4 +497,3 @@ def process_any_document(
         gemini_model=gemini_model,
     )
     return {"kind": "medical", "doc_type": "medical_lab_report", "result": med}
-
