@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 
 def setup_logger(
     name: str = "medical_extractor",
     level: str = "INFO",
-    log_file: Optional[Path] = None,
+    log_file: Path | None = None,
 ) -> logging.Logger:
     logger = logging.getLogger(name)
     if logger.handlers:

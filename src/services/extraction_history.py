@@ -5,7 +5,7 @@ import mimetypes
 import re
 import shutil
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -86,7 +86,7 @@ def save_extraction(
     sub.mkdir(parents=True, exist_ok=True)
     db_path = cfg.extraction_history_db_path
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    ts = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     fname = f"{ts}_{_safe_stem(source_filename)}.json"
     path = sub / fname
     source_path: Path | None = None
@@ -111,7 +111,7 @@ def save_extraction(
     guessed_mime, _ = mimetypes.guess_type(source_filename)
     source_mime = source_mime or guessed_mime or "application/octet-stream"
     meta = {
-        "saved_at": datetime.now(timezone.utc).isoformat(),
+        "saved_at": datetime.now(UTC).isoformat(),
         "source_filename": source_filename,
         "kind": kind,
         "status": status,
@@ -253,7 +253,7 @@ def delete_history_entry(cfg: AppConfig, entry: dict[str, Any]) -> tuple[bool, s
 
     try:
         trash_root.mkdir(parents=True, exist_ok=True)
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
         fallback_name = f"{timestamp}_{_safe_stem(source_filename)}.json"
         relative_candidate = (
             Path(relative)
@@ -266,7 +266,7 @@ def delete_history_entry(cfg: AppConfig, entry: dict[str, Any]) -> tuple[bool, s
         trashed_payload = dict(payload)
         meta = trashed_payload.get("_meta") if isinstance(trashed_payload.get("_meta"), dict) else {}
         trashed_meta = dict(meta)
-        trashed_meta["trashed_at"] = datetime.now(timezone.utc).isoformat()
+        trashed_meta["trashed_at"] = datetime.now(UTC).isoformat()
         if relative:
             trashed_meta["original_relative_path"] = relative
 

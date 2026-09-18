@@ -8,12 +8,11 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from google.genai import types
 
 from src.gemini_vision import generate_vision_json, guess_image_mime_type
-
 from src.models.schemas import (
     DocumentMetadata,
     LabInfo,
@@ -67,7 +66,7 @@ Règles :
 """
 
 
-def _parse_json_from_response(text: str) -> Dict[str, Any]:
+def _parse_json_from_response(text: str) -> dict[str, Any]:
     text = text.strip()
     m = re.search(r"```(?:json)?\s*(\{.*\})\s*```", text, re.DOTALL)
     if m:
@@ -79,7 +78,7 @@ def _parse_json_from_response(text: str) -> Dict[str, Any]:
     raise ValueError("Aucun JSON valide dans la réponse Gemini")
 
 
-def _to_float_safe(v: Any) -> Optional[float]:
+def _to_float_safe(v: Any) -> float | None:
     if v is None:
         return None
     if isinstance(v, (int, float)):
@@ -93,8 +92,8 @@ def _to_float_safe(v: Any) -> Optional[float]:
         return None
 
 
-def _gemini_dict_to_result(data: Dict[str, Any], source_file: str) -> MedicalDocumentResult:
-    tests_out: List[LabTest] = []
+def _gemini_dict_to_result(data: dict[str, Any], source_file: str) -> MedicalDocumentResult:
+    tests_out: list[LabTest] = []
     for t in data.get("tests") or []:
         if not isinstance(t, dict):
             continue
@@ -157,13 +156,13 @@ def analyze_medical_document_gemini(
     api_key: str,
     model_name: str,
     ocr_text: str,
-    image_path: Optional[Path] = None,
+    image_path: Path | None = None,
     source_file: str = "",
 ) -> MedicalDocumentResult:
     """
     Appelle Gemini avec texte OCR (+ image si chemin fourni et fichier image).
     """
-    user_parts: List[Any] = [
+    user_parts: list[Any] = [
         SYSTEM_PROMPT,
         "\n\n--- TEXTE OCR (peut être bruité) ---\n",
         ocr_text[:120_000] if ocr_text else "(vide)",

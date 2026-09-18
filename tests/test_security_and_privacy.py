@@ -3,7 +3,13 @@ from dataclasses import replace
 
 import pytest
 
-from backend.app.auth import create_access_token, decode_access_token, hash_password, validate_auth_config, verify_password
+from backend.app.auth import (
+    create_access_token,
+    decode_access_token,
+    hash_password,
+    validate_auth_config,
+    verify_password,
+)
 from src.config import load_config
 from src.services.extraction_history import save_extraction
 

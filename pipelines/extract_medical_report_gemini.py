@@ -4,13 +4,12 @@ import argparse
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from google.genai import types
 
 from src.gemini_vision import extract_first_json_object, generate_vision_json, guess_image_mime_type
 from src.services.gemini_payload_normalize import normalize_medical_gemini_page
-
 
 PROMPT = """
 Tu es un extracteur d'informations médicales.
@@ -45,8 +44,8 @@ Règles strictes:
 """.strip()
 
 
-def _ensure_schema(data: Dict[str, Any]) -> Dict[str, Any]:
-    out: Dict[str, Any] = {
+def _ensure_schema(data: dict[str, Any]) -> dict[str, Any]:
+    out: dict[str, Any] = {
         "patient_name": data.get("patient_name"),
         "doctor_name": data.get("doctor_name"),
         "date": data.get("date"),
@@ -73,10 +72,10 @@ def extract_medical_report(
     image_path: str | Path,
     *,
     api_key: str | None = None,
-    model: Optional[str] = None,
+    model: str | None = None,
     retries: int = 3,
     retry_delay_sec: float = 2.0,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Extrait les informations importantes d'un document d'analyse médicale depuis une image.
     Utilise GEMINI_API_KEY depuis les variables d'environnement.
@@ -89,7 +88,7 @@ def extract_medical_report(
 
     api_key = (api_key or os.getenv("GEMINI_API_KEY") or "").strip()
     if not api_key:
-        raise EnvironmentError(
+        raise OSError(
             "GEMINI_API_KEY introuvable. Définissez la variable d'environnement."
         )
 

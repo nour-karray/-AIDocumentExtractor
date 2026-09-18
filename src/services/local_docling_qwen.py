@@ -304,7 +304,6 @@ def _paddleocr_to_text_raw(file_path: Path) -> str:
 def _fast_tesseract_to_text(file_path: Path, mode: str) -> str:
     try:
         import cv2
-        import numpy as np
         import pytesseract
 
         from src.extraction.steg_invoice_extractor import configure_tesseract

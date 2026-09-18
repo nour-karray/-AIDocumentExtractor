@@ -6,7 +6,6 @@ import tempfile
 import time
 import unicodedata
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import cv2
 import pytesseract
@@ -98,7 +97,7 @@ def _render_pdf_first_page(file_path: Path, png_path: Path) -> list[ProcessingWa
     return []
 
 
-def _to_float(value: Optional[str]) -> Optional[float]:
+def _to_float(value: str | None) -> float | None:
     if not value:
         return None
     txt = str(value).strip().replace(" ", "").replace(",", ".")
@@ -108,11 +107,11 @@ def _to_float(value: Optional[str]) -> Optional[float]:
         return None
 
 
-def _parse_reference_range(raw: Optional[str]) -> Optional[ReferenceRange]:
+def _parse_reference_range(raw: str | None) -> ReferenceRange | None:
     if not raw:
         return None
     txt = raw.replace(",", ".")
-    nums: List[float] = []
+    nums: list[float] = []
     for token in txt.replace("a", " ").replace("à", " ").replace("-", " ").split():
         try:
             nums.append(float(token))
@@ -125,7 +124,7 @@ def _parse_reference_range(raw: Optional[str]) -> Optional[ReferenceRange]:
 
 def _normalize_name(raw_name: str) -> str:
     n = raw_name.lower()
-    mapping: Dict[str, List[str]] = {
+    mapping: dict[str, list[str]] = {
         "tsh": ["tsh", "thyreostimuline"],
         "vitamin_d": ["vitamine d", "hydroxy", "25-oh"],
         "glucose": ["glycem", "glucose"],
@@ -160,7 +159,7 @@ def _map_category(raw_name: str) -> str:
     return "other"
 
 
-def _compute_status(value: Optional[float], rr: Optional[ReferenceRange]) -> str:
+def _compute_status(value: float | None, rr: ReferenceRange | None) -> str:
     if value is None or rr is None or rr.min is None or rr.max is None:
         return "unknown"
     if value < rr.min:
@@ -170,8 +169,8 @@ def _compute_status(value: Optional[float], rr: Optional[ReferenceRange]) -> str
     return "normal"
 
 
-def _rows_to_tests(rows: List[Dict[str, Optional[str]]]) -> List[LabTest]:
-    tests: List[LabTest] = []
+def _rows_to_tests(rows: list[dict[str, str | None]]) -> list[LabTest]:
+    tests: list[LabTest] = []
     for row in rows:
         raw_name = (row.get("parametre") or "unknown").strip()
         val = _to_float(row.get("valeur"))
@@ -200,7 +199,7 @@ def _strip_accents(value: str) -> str:
     return "".join(ch for ch in normalized if not unicodedata.combining(ch))
 
 
-def _parse_date_token(raw: str | None) -> Optional[str]:
+def _parse_date_token(raw: str | None) -> str | None:
     if not raw:
         return None
     text = normalize_digits(raw)
@@ -218,7 +217,7 @@ def _parse_date_token(raw: str | None) -> Optional[str]:
     return f"{year_i:04d}-{month_i:02d}-{day_i:02d}"
 
 
-def _date_after_label(text: str, labels: tuple[str, ...]) -> Optional[str]:
+def _date_after_label(text: str, labels: tuple[str, ...]) -> str | None:
     normalized = normalize_digits(text or "")
     for label in labels:
         pattern = rf"{label}\s*[:=]?\s*(\d{{1,2}}\s*[./-]\s*\d{{1,2}}\s*[./-]\s*\d{{2,4}})"
@@ -230,11 +229,11 @@ def _date_after_label(text: str, labels: tuple[str, ...]) -> Optional[str]:
     return None
 
 
-def _extract_medical_metadata_from_text(text: str) -> dict[str, Optional[str]]:
+def _extract_medical_metadata_from_text(text: str) -> dict[str, str | None]:
     normalized = normalize_digits(text or "")
     compact = re.sub(r"\s+", " ", normalized)
 
-    def find(pattern: str) -> Optional[str]:
+    def find(pattern: str) -> str | None:
         match = re.search(pattern, compact, flags=re.IGNORECASE)
         if not match:
             return None
@@ -250,7 +249,7 @@ def _extract_medical_metadata_from_text(text: str) -> dict[str, Optional[str]]:
     }
 
 
-def _extract_requested_doctor(text: str) -> Optional[str]:
+def _extract_requested_doctor(text: str) -> str | None:
     normalized = normalize_digits(text or "")
     patterns = [
         r"Demand[eé]\s*(?:par)?\s*Dr\.?\s*[:?]?\s*([A-Z][A-Z\s.'-]{3,60})",
@@ -403,9 +402,9 @@ def _best_medical_ocr_text(
     return normalize_digits(best_text or ""), best_label, best_gray, warnings
 
 
-def _fallback_rows_from_medical_text(text: str) -> List[Dict[str, Optional[str]]]:
+def _fallback_rows_from_medical_text(text: str) -> list[dict[str, str | None]]:
     lines = [re.sub(r"\s+", " ", normalize_digits(line)).strip() for line in (text or "").splitlines()]
-    rows: list[dict[str, Optional[str]]] = []
+    rows: list[dict[str, str | None]] = []
     seen: set[str] = set()
     unit_pattern = (
         r"(g\s*/?\s*[l1]|mmol\s*/?\s*[l1t]|mg\s*/?\s*[l1]|mg\s*/?\s*d[l1]|"
@@ -472,7 +471,7 @@ _KNOWN_MEDICAL_LINE_TESTS: list[tuple[str, tuple[str, ...], str]] = [
 ]
 
 
-def _first_plausible_number(text: str) -> Optional[str]:
+def _first_plausible_number(text: str) -> str | None:
     normalized = normalize_digits(text)
     for raw in re.findall(r"\d{1,6}(?:[,.]\d{1,3})?", normalized):
         compact = raw.replace(" ", "")
@@ -485,9 +484,9 @@ def _first_plausible_number(text: str) -> Optional[str]:
     return None
 
 
-def _known_rows_from_medical_text(text: str) -> List[Dict[str, Optional[str]]]:
+def _known_rows_from_medical_text(text: str) -> list[dict[str, str | None]]:
     lines = [re.sub(r"\s+", " ", normalize_digits(line)).strip() for line in (text or "").splitlines()]
-    rows: list[dict[str, Optional[str]]] = []
+    rows: list[dict[str, str | None]] = []
     seen: set[str] = set()
     for index, line in enumerate(lines):
         if not line:
@@ -520,8 +519,8 @@ def _known_rows_from_medical_text(text: str) -> List[Dict[str, Optional[str]]]:
     return rows
 
 
-def _merge_rows(primary: List[Dict[str, Optional[str]]], extra: List[Dict[str, Optional[str]]]) -> List[Dict[str, Optional[str]]]:
-    merged: list[dict[str, Optional[str]]] = []
+def _merge_rows(primary: list[dict[str, str | None]], extra: list[dict[str, str | None]]) -> list[dict[str, str | None]]:
+    merged: list[dict[str, str | None]] = []
     seen: set[str] = set()
     for row in [*primary, *extra]:
         name = (row.get("parametre") or "").strip()
@@ -533,11 +532,11 @@ def _merge_rows(primary: List[Dict[str, Optional[str]]], extra: List[Dict[str, O
     return merged
 
 
-def _extract_patient_fields_from_text(text: str) -> dict[str, Optional[str]]:
+def _extract_patient_fields_from_text(text: str) -> dict[str, str | None]:
     normalized = normalize_digits(text or "")
     flat = re.sub(r"\s+", " ", normalized)
 
-    def find(pattern: str) -> Optional[str]:
+    def find(pattern: str) -> str | None:
         match = re.search(pattern, flat, flags=re.IGNORECASE)
         if not match:
             return None
@@ -663,7 +662,7 @@ def process_medical_file_fast(
         _fallback_rows_from_medical_text(text),
         _known_rows_from_medical_text(text),
     )
-    image_rows: list[dict[str, Optional[str]]] = []
+    image_rows: list[dict[str, str | None]] = []
     if original_gray is not None:
         image_rows = extract_result_rows_from_medical_ocr_data(original_gray)
     text_tests = _rows_to_tests(text_rows)
@@ -727,15 +726,15 @@ def process_medical_file(
     file_path: Path,
     *,
     use_gemini: bool = False,
-    gemini_api_key: Optional[str] = None,
-    gemini_model: Optional[str] = None,
+    gemini_api_key: str | None = None,
+    gemini_model: str | None = None,
 ) -> MedicalDocumentResult:
-    warnings: List[ProcessingWarning] = []
+    warnings: list[ProcessingWarning] = []
     suffix = file_path.suffix.lower()
     api_key = gemini_api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     model = gemini_model or os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
-    def _try_gemini(ocr_text: str, image_for_model: Optional[Path]) -> tuple[Optional[MedicalDocumentResult], List[ProcessingWarning]]:
+    def _try_gemini(ocr_text: str, image_for_model: Path | None) -> tuple[MedicalDocumentResult | None, list[ProcessingWarning]]:
         if not use_gemini or not api_key:
             return None, []
         try:

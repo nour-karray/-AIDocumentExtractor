@@ -112,7 +112,6 @@ def _quad_output_shape(points: Any) -> tuple[int, int]:
 
 def _candidate_quad_from_contour(contour: Any) -> Any | None:
     import cv2
-    import numpy as np
 
     peri = cv2.arcLength(contour, True)
     for factor in (0.015, 0.02, 0.03, 0.045, 0.065):
@@ -133,7 +132,6 @@ def _find_document_quad(image: Any, metadata: dict[str, Any]) -> Any | None:
     import numpy as np
 
     h, w = image.shape[:2]
-    image_area = float(max(h * w, 1))
     if h < 140 or w < 140:
         return None
 

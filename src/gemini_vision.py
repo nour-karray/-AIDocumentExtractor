@@ -5,7 +5,7 @@ import json
 import re
 import time
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any
 
 from google import genai
 from google.genai import types
@@ -97,7 +97,7 @@ def loads_json_from_gemini_response(raw: str) -> Any:
     """
     blob = extract_first_json_object(raw)
     variants = (blob, repair_json_common_issues(blob))
-    last_exc: Optional[Exception] = None
+    last_exc: Exception | None = None
     for candidate in variants:
         try:
             return json.loads(candidate)
@@ -110,16 +110,16 @@ def loads_json_from_gemini_response(raw: str) -> Any:
 def generate_vision_json(
     *,
     api_key: str,
-    contents: List[Any],
-    model_preference: Optional[str],
+    contents: list[Any],
+    model_preference: str | None,
     retries: int,
     retry_delay_sec: float,
-    response_json_schema: Optional[dict[str, Any]] = None,
-    max_output_tokens: Optional[int] = None,
+    response_json_schema: dict[str, Any] | None = None,
+    max_output_tokens: int | None = None,
 ) -> str:
     client = genai.Client(api_key=api_key)
     models = gemini_model_fallback_chain(model_preference)
-    last_exc: Optional[BaseException] = None
+    last_exc: BaseException | None = None
     response = None
     for mdl in models:
         for attempt in range(1, max(1, retries) + 1):

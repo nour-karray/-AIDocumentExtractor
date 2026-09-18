@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -13,13 +12,13 @@ class AppConfig:
     data_preprocessed_dir: Path
     data_extracted_text_dir: Path
     data_output_dir: Path
-    tesseract_cmd: Optional[str]
+    tesseract_cmd: str | None
     default_ocr_lang: str
     enable_easyocr_fallback: bool
     log_level: str
     save_intermediate_files: bool
     # Google Gemini (compréhension document / analyses)
-    gemini_api_key: Optional[str]
+    gemini_api_key: str | None
     gemini_model: str
     # Historique des extractions (JSON par type, interface dédiée)
     extraction_history_dir: Path
@@ -27,9 +26,9 @@ class AppConfig:
     # Authentification API optionnelle.
     auth_enabled: bool
     auth_username: str
-    auth_password_hash: Optional[str]
-    auth_password: Optional[str]
-    auth_token_secret: Optional[str]
+    auth_password_hash: str | None
+    auth_password: str | None
+    auth_token_secret: str | None
     auth_token_ttl_minutes: int
     ollama_host: str = "http://127.0.0.1:11434"
     ollama_model: str = "qwen2.5:7b-instruct"
@@ -78,7 +77,7 @@ def _default_project_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
 
-def load_config(project_root: Optional[Path] = None) -> AppConfig:
+def load_config(project_root: Path | None = None) -> AppConfig:
     root = project_root or _default_project_root()
     data_dir = root / "data"
 

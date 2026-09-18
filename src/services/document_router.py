@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Dict
 
 from src.extraction.steg_invoice_extractor import configure_tesseract, extract_fields_from_invoice
 from src.services.gemini_payload_normalize import enrich_steg_router_result
@@ -396,7 +395,7 @@ def process_any_document(
     use_gemini: bool = False,
     gemini_api_key: str | None = None,
     gemini_model: str | None = None,
-) -> Dict:
+) -> dict:
     chosen = mode
     if mode == "auto":
         dt = detect_document_type(file_path)
@@ -417,7 +416,7 @@ def process_any_document(
             or os.getenv("GEMINI_API_KEY")
             or os.getenv("GOOGLE_API_KEY")
         ):
-            raise EnvironmentError(
+            raise OSError(
                 "GEMINI_API_KEY (ou GOOGLE_API_KEY) requise pour la facture fournisseur."
             )
         data = extract_supplier_invoice(
@@ -436,7 +435,7 @@ def process_any_document(
                 "Ticket : fournissez une image (JPG, PNG, TIFF, WebP), pas un PDF."
             )
         if not (gemini_api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")):
-            raise EnvironmentError(
+            raise OSError(
                 "GEMINI_API_KEY requise pour l'extraction ticket (mode auto)."
             )
         data = extract_receipt(
