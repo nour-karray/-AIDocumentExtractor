@@ -261,7 +261,7 @@ def render_image(case: dict[str, Any], image_path: Path, pdf_path: Path, rng: ra
         draw.text((900, y), test["reference_range"]["raw_text"], fill=(15, 25, 45), font=font_small)
         y += 46
 
-    draw.text((75, height - 110), "Document synthetique annote pour fine-tuning DocuAI", fill=(60, 95, 130), font=font_small)
+    draw.text((75, height - 110), "Document synthetique annote pour fine-tuning DocIA", fill=(60, 95, 130), font=font_small)
     draw.text((width - 260, height - 115), "Signature", fill=(40, 80, 160), font=font)
     draw.line([width - 285, height - 85, width - 95, height - 130], fill=(20, 70, 170), width=4)
 
@@ -296,7 +296,7 @@ def write_example(case: dict[str, Any], rng: random.Random) -> dict[str, str]:
 def copy_real_reference_images() -> None:
     target = RAW_ROOT / "real_references"
     target.mkdir(parents=True, exist_ok=True)
-    source = PROJECT_ROOT / "Data" / "raw_Data" / "analyse_medical"
+    source = PROJECT_ROOT / "data" / "raw" / "analyse_medical"
     if not source.exists():
         return
     for path in sorted(source.glob("*")):

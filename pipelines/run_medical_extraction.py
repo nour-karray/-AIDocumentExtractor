@@ -17,7 +17,7 @@ def _parse_args() -> argparse.Namespace:
         "--input-dir",
         type=Path,
         default=None,
-        help="Dossier images (defaut: Data/raw_Data/medical).",
+        help="Dossier images (defaut: data/raw/medical).",
     )
     p.add_argument(
         "--limit",
@@ -40,7 +40,7 @@ def _progress(idx: int, total: int, file_name: str) -> None:
 def main() -> None:
     args = _parse_args()
     root = ROOT
-    input_dir = args.input_dir or (root / "Data" / "raw_Data" / "medical")
+    input_dir = args.input_dir or (root / "data" / "raw" / "medical")
     output_json = root / "outputs" / "extraction" / "medical_extraction_results.json"
     output_csv = root / "outputs" / "extraction" / "medical_extraction_results.csv"
     debug_dir = None if args.no_debug else (root / "outputs" / "extraction" / "debug_medical")

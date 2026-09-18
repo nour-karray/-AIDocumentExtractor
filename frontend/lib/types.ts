@@ -163,11 +163,6 @@ export type AuthLoginPayload = {
   password: string;
 };
 
-export type AuthRegisterPayload = {
-  username: string;
-  password: string;
-};
-
 export type AuthLoginResponse = {
   accessToken: string;
   tokenType: "bearer";

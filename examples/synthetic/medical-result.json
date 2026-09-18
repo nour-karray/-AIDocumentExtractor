@@ -1,0 +1,9 @@
+{
+  "document_type": "medical_lab_report",
+  "patient_name": "PERSONNE SYNTHETIQUE",
+  "report_date": "2026-01-15",
+  "tests": [
+    {"name": "Hemoglobine", "value": "14.2", "unit": "g/dL"}
+  ],
+  "synthetic": true
+}

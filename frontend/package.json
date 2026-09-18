@@ -1,12 +1,12 @@
 {
-  "name": "docuai-frontend",
+  "name": "docia-frontend",
   "private": true,
-  "version": "0.1.0",
+  "version": "2.0.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
     "clsx": "^2.1.1",

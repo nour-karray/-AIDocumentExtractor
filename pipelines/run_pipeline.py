@@ -8,7 +8,7 @@ if str(ROOT) not in sys.path:
 from src.extraction.medical_analysis_extractor import extract_batch_medical
 from src.extraction.steg_invoice_extractor import extract_batch
 
-RAW_DIR = ROOT / "Data" / "raw_Data"
+RAW_DIR = ROOT / "data" / "raw"
 EXTRACT_OUT_DIR = ROOT / "outputs" / "extraction"
 STEG_INPUT_DIR = RAW_DIR / "electricite"
 MEDICAL_INPUT_DIR = RAW_DIR / "medical"

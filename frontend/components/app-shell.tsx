@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  BarChart3,
   FileText,
   FolderKanban,
   History,
@@ -25,14 +24,13 @@ const navigation = [
   { href: "/documents", label: "Documents", icon: FolderKanban },
   { href: "/extractions", label: "Extractions", icon: Sparkles },
   { href: "/history", label: "Historiques", icon: History },
-  { href: "/evaluation", label: "Evaluation IA", icon: BarChart3 },
   { href: "/settings", label: "Parametres", icon: Settings }
 ];
 
 export function AppShell({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const router = useRouter();
-  const isAuthPage = pathname === "/login" || pathname === "/register";
+  const isAuthPage = pathname === "/login";
   const showTopSearch = pathname !== "/dashboard";
 
   const handleLogout = () => {
@@ -57,7 +55,7 @@ export function AppShell({ children }: PropsWithChildren) {
               <FileText className="h-4 w-4" />
             </div>
             <div>
-              <div className="text-sm font-bold">DocuAI</div>
+              <div className="text-sm font-bold">DocIA</div>
             </div>
           </div>
 
@@ -116,7 +114,7 @@ export function AppShell({ children }: PropsWithChildren) {
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[linear-gradient(145deg,#ffe0ef,#eef2ff)] text-[#7c4dff] dark:bg-[linear-gradient(145deg,#2a244d,#101625)]">
                 <FileText className="h-4 w-4" />
               </div>
-              <div className="text-sm font-bold">DocuAI</div>
+              <div className="text-sm font-bold">DocIA</div>
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />

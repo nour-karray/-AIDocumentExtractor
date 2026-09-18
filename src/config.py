@@ -31,6 +31,15 @@ class AppConfig:
     auth_password: Optional[str]
     auth_token_secret: Optional[str]
     auth_token_ttl_minutes: int
+    ollama_host: str = "http://127.0.0.1:11434"
+    ollama_model: str = "qwen2.5:7b-instruct"
+    extraction_timeout_seconds: float = 120.0
+    max_document_bytes: int = 20 * 1024 * 1024
+    max_batch_files: int = 10
+    max_batch_bytes: int = 50 * 1024 * 1024
+    store_source_files: bool = False
+    store_raw_text: bool = False
+    cors_origins: tuple[str, ...] = ("http://localhost:3000", "http://127.0.0.1:3000")
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -50,6 +59,21 @@ def _env_int(name: str, default: int) -> int:
         return default
 
 
+def _env_float(name: str, default: float) -> float:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        return default
+
+
+def _env_origins(name: str) -> tuple[str, ...]:
+    raw = os.getenv(name, "http://localhost:3000,http://127.0.0.1:3000")
+    return tuple(origin.strip().rstrip("/") for origin in raw.split(",") if origin.strip())
+
+
 def _default_project_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
@@ -62,13 +86,13 @@ def load_config(project_root: Optional[Path] = None) -> AppConfig:
     tesseract_default = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
     tesseract_cmd = os.getenv("TESSERACT_CMD", tesseract_default)
 
-    # Charger .env : racine du projet puis répertoire courant (lancement Streamlit)
+    # Load local development configuration without overriding process values.
     try:
         from dotenv import load_dotenv
 
         load_dotenv(root / ".env", override=False)
         load_dotenv(Path.cwd() / ".env", override=False)
-    except Exception:
+    except ImportError:
         pass
 
     gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
@@ -104,11 +128,19 @@ def load_config(project_root: Optional[Path] = None) -> AppConfig:
         gemini_model=gemini_model,
         extraction_history_dir=history_dir,
         extraction_history_db_path=history_db_path,
-        auth_enabled=_env_bool("DOCUAI_AUTH_ENABLED", False),
-        auth_username=os.getenv("DOCUAI_AUTH_USERNAME", "admin"),
-        auth_password_hash=os.getenv("DOCUAI_AUTH_PASSWORD_HASH"),
-        auth_password=os.getenv("DOCUAI_AUTH_PASSWORD"),
-        auth_token_secret=os.getenv("DOCUAI_AUTH_TOKEN_SECRET"),
-        auth_token_ttl_minutes=max(5, _env_int("DOCUAI_AUTH_TOKEN_TTL_MINUTES", 480)),
+        auth_enabled=_env_bool("DOCIA_AUTH_ENABLED", False),
+        auth_username=os.getenv("DOCIA_AUTH_USERNAME", "admin"),
+        auth_password_hash=os.getenv("DOCIA_AUTH_PASSWORD_HASH"),
+        auth_password=os.getenv("DOCIA_AUTH_PASSWORD"),
+        auth_token_secret=os.getenv("DOCIA_AUTH_TOKEN_SECRET"),
+        auth_token_ttl_minutes=max(5, _env_int("DOCIA_AUTH_TOKEN_TTL_MINUTES", 480)),
+        ollama_host=os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434").rstrip("/"),
+        ollama_model=os.getenv("OLLAMA_MODEL", "qwen2.5:7b-instruct").strip(),
+        extraction_timeout_seconds=max(5.0, _env_float("DOCIA_EXTRACTION_TIMEOUT_SECONDS", 120.0)),
+        max_document_bytes=max(1, _env_int("DOCIA_MAX_DOCUMENT_BYTES", 20 * 1024 * 1024)),
+        max_batch_files=max(1, _env_int("DOCIA_MAX_BATCH_FILES", 10)),
+        max_batch_bytes=max(1, _env_int("DOCIA_MAX_BATCH_BYTES", 50 * 1024 * 1024)),
+        store_source_files=_env_bool("DOCIA_STORE_SOURCE_FILES", False),
+        store_raw_text=_env_bool("DOCIA_STORE_RAW_TEXT", False),
+        cors_origins=_env_origins("DOCIA_CORS_ORIGINS"),
     )
-

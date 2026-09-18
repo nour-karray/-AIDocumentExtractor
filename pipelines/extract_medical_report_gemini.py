@@ -72,6 +72,7 @@ def _ensure_schema(data: Dict[str, Any]) -> Dict[str, Any]:
 def extract_medical_report(
     image_path: str | Path,
     *,
+    api_key: str | None = None,
     model: Optional[str] = None,
     retries: int = 3,
     retry_delay_sec: float = 2.0,
@@ -86,7 +87,7 @@ def extract_medical_report(
     if not path.is_file():
         raise ValueError(f"Chemin invalide (pas un fichier): {path}")
 
-    api_key = os.getenv("GEMINI_API_KEY")
+    api_key = (api_key or os.getenv("GEMINI_API_KEY") or "").strip()
     if not api_key:
         raise EnvironmentError(
             "GEMINI_API_KEY introuvable. Définissez la variable d'environnement."
@@ -182,4 +183,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

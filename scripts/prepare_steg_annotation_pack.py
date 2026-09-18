@@ -256,7 +256,7 @@ def promote_verified() -> dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Prepare STEG annotation drafts for DocuAI fine-tuning."
+        description="Prepare STEG annotation drafts for DocIA fine-tuning."
     )
     parser.add_argument(
         "--source",
@@ -277,8 +277,8 @@ def main() -> None:
     source_dirs = [Path(item) for item in args.source]
     if not source_dirs:
         source_dirs = [
-            PROJECT_ROOT / "Data" / "raw_Data" / "electricite",
-            PROJECT_ROOT / "Data" / "raw_Data" / "electricite copy",
+            PROJECT_ROOT / "data" / "raw" / "electricite",
+            PROJECT_ROOT / "data" / "raw" / "electricite_copy",
             FINE_ROOT / "raw" / "custom" / "steg",
             FINE_ROOT / "raw" / "generated" / "steg",
         ]

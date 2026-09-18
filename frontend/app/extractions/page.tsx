@@ -15,7 +15,6 @@ import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { fetchMeta, uploadExtractions } from "@/lib/api";
 import {
@@ -25,13 +24,6 @@ import {
 } from "@/lib/storage";
 import type { ExtractionBatchPayload, MetaPayload } from "@/lib/types";
 import type { DragEvent } from "react";
-
-const localConfig = {
-  label: "Pipeline IA local",
-  provider: "Ollama",
-  defaultHost: "http://127.0.0.1:11434",
-  defaultModel: "qwen2.5:7b-instruct",
-} as const;
 
 const fallbackMethods = [
   { value: "local", label: "Pipeline IA local (Docling + PaddleOCR + Qwen2.5)" },
@@ -66,8 +58,7 @@ function resolveInitialMethod(meta: MetaPayload) {
 function resolveStoredMethod(meta: MetaPayload) {
   const allowedMethods = resolveAllowedMethods(meta);
   const storedMethod =
-    readStoredValue(storageKeys.defaultMethod, "") ||
-    readStoredValue(storageKeys.aiProvider, "");
+    readStoredValue(storageKeys.defaultMethod, "");
 
   if (storedMethod && allowedMethods.some((item) => item.value === storedMethod)) {
     return storedMethod;
@@ -82,10 +73,6 @@ export default function ExtractionsPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [mode, setMode] = useState("auto");
   const [method, setMethod] = useState("local");
-  const [ollamaHost, setOllamaHost] = useState<string>(localConfig.defaultHost);
-  const [localModel, setLocalModel] = useState<string>(localConfig.defaultModel);
-  const [geminiApiKey, setGeminiApiKey] = useState("");
-  const [geminiModel, setGeminiModel] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -97,15 +84,12 @@ export default function ExtractionsPage() {
     fetchMeta()
       .then((payload) => {
         setMeta(payload);
-        setOllamaHost(readStoredValue(storageKeys.ollamaHost, payload.defaultOllamaHost ?? localConfig.defaultHost));
-        setLocalModel(readStoredValue(storageKeys.localModel, payload.defaultLocalModel ?? localConfig.defaultModel));
-        setGeminiModel(payload.defaultGeminiModel);
         const initialMethod = resolveStoredMethod(payload);
         setMethod(initialMethod);
         writeStoredValue(storageKeys.defaultMethod, initialMethod);
       })
       .catch((err) => {
-        setError(err instanceof Error ? err.message : "Backend DocuAI non joignable.");
+        setError(err instanceof Error ? err.message : "Backend DocIA non joignable.");
       });
   }, []);
 
@@ -124,7 +108,7 @@ export default function ExtractionsPage() {
       ? "Mode par defaut : pretraitement, Docling, controle qualite, fallback PaddleOCR si besoin, puis extraction JSON par Qwen2.5 local via Ollama."
       : method === "ocr"
         ? "OCR local classique sans Qwen. Utile seulement pour comparer ou depanner."
-        : "Ancien moteur conserve : Gemini API pour les documents complexes, avec une cle dans .env ou saisie ici pour la session.";
+        : "Gemini est configure uniquement sur le serveur via les variables d'environnement.";
 
   useEffect(() => {
     if (!meta) {
@@ -216,10 +200,6 @@ export default function ExtractionsPage() {
     });
     form.append("mode", mode);
     form.append("method", method);
-    form.append("geminiApiKey", geminiApiKey);
-    form.append("geminiModel", geminiModel);
-    form.append("ollamaHost", ollamaHost);
-    form.append("localModel", localModel);
     form.append("retries", "5");
     form.append("retryDelay", "2");
     form.append("originsJson", JSON.stringify(origins));
@@ -238,9 +218,6 @@ export default function ExtractionsPage() {
         setError("");
       }
       writeStoredValue(storageKeys.lastExtraction, JSON.stringify(response));
-      writeStoredValue(storageKeys.aiProvider, method);
-      writeStoredValue(storageKeys.ollamaHost, ollamaHost);
-      writeStoredValue(storageKeys.localModel, localModel);
       writeStoredValue(storageKeys.defaultMethod, method);
       if (response.latestSuccess?.historyEntryKey) {
         router.push(`/documents?entry=${response.latestSuccess.historyEntryKey}`);
@@ -417,7 +394,6 @@ export default function ExtractionsPage() {
                 onChange={(event) => {
                   const nextValue = event.target.value;
                   setMethod(nextValue);
-                  writeStoredValue(storageKeys.aiProvider, nextValue);
                   writeStoredValue(storageKeys.defaultMethod, nextValue);
                 }}
               >
@@ -447,24 +423,9 @@ export default function ExtractionsPage() {
 
             {method === "gemini" ? (
               <div className="space-y-3">
-                <div className="space-y-2">
-                  <div className="text-[12px] font-semibold text-[#687292]">Modele Gemini</div>
-                  <Input
-                    value={geminiModel}
-                    onChange={(event) => setGeminiModel(event.target.value)}
-                    placeholder={meta?.defaultGeminiModel ?? "gemini-2.5-flash"}
-                  />
-                  <div className="text-[12px] font-semibold text-[#687292]">Cle API Gemini</div>
-                  <Input
-                    type="password"
-                    value={geminiApiKey}
-                    onChange={(event) => setGeminiApiKey(event.target.value)}
-                    placeholder={meta?.geminiConfigured ? "Cle deja configuree dans .env" : "GEMINI_API_KEY"}
-                  />
-                </div>
                 <div className="rounded-[16px] border border-[rgba(139,147,172,0.14)] bg-[#fbfcff] p-3 text-[12px] text-[#6b7594] dark:border-white/10 dark:bg-[#0f1525] dark:text-[#b1bcda]">
                   <div className="mb-1 font-semibold text-[#1b2440] dark:text-white">Gemini API</div>
-                  <div>Mode API conserve pour comparer avec le pipeline local ou traiter des documents complexes.</div>
+                  <div>Les identifiants et le modele sont geres exclusivement par le backend.</div>
                   <div className="mt-2">
                     Etat backend : cle Gemini {meta?.geminiConfigured ? "configuree dans .env" : "non configuree"}.
                   </div>
@@ -482,7 +443,7 @@ export default function ExtractionsPage() {
             {method === "local" ? (
             <div className="space-y-3">
               <div className="rounded-[16px] border border-[rgba(139,147,172,0.14)] bg-[#fbfcff] p-3 text-[12px] text-[#6b7594] dark:border-white/10 dark:bg-[#0f1525] dark:text-[#b1bcda]">
-                <div className="mb-1 font-semibold text-[#1b2440] dark:text-white">{localConfig.label}</div>
+                <div className="mb-1 font-semibold text-[#1b2440] dark:text-white">Pipeline IA local</div>
                 <div>Pipeline actif : document vers pretraitement, Docling, controle qualite, fallback PaddleOCR si besoin, puis JSON extrait par Qwen2.5 via Ollama.</div>
                 <div className="mt-2">
                   Etat backend : Docling {meta?.localPipeline?.doclingAvailable ? "pret" : "non installe"} / PaddleOCR {meta?.localPipeline?.paddleocrAvailable ? "pret" : "non installe"} / Ollama {meta?.localPipeline?.ollamaAvailable ? "pret" : "non joignable"}.

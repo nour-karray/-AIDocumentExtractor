@@ -2,7 +2,6 @@ import type {
   AuthLoginPayload,
   AuthLoginResponse,
   AuthMeResponse,
-  AuthRegisterPayload,
   DashboardPayload,
   ExtractionBatchPayload,
   HistoryDetail,
@@ -48,7 +47,7 @@ function networkErrorMessage(err: unknown) {
     return "Requete interrompue: le backend met trop de temps a repondre.";
   }
   if (err instanceof TypeError) {
-    return "Backend DocuAI non joignable. Lance run_api.ps1 puis recharge la page.";
+    return "Backend DocIA non joignable. Lance run_api.ps1 puis recharge la page.";
   }
   return err instanceof Error ? err.message : "Erreur reseau a verifier.";
 }
@@ -96,15 +95,6 @@ export function fetchMeta() {
 
 export async function loginApi(payload: AuthLoginPayload) {
   const response = await readJson<AuthLoginResponse>("/api/auth/login", {
-    method: "POST",
-    body: JSON.stringify(payload)
-  });
-  writeSessionValue(storageKeys.authToken, response.accessToken);
-  return response;
-}
-
-export async function registerApi(payload: AuthRegisterPayload) {
-  const response = await readJson<AuthLoginResponse>("/api/auth/register", {
     method: "POST",
     body: JSON.stringify(payload)
   });
@@ -187,7 +177,7 @@ async function downloadBinary(path: string, fallbackFilename: string) {
 export function downloadHistoryReport(entryKey: string, sourceFilename = "document") {
   return downloadBinary(
     `/api/history/${entryKey}/report.pdf`,
-    `DOCEXTRACT_${safeDownloadStem(sourceFilename)}.pdf`
+    `DOCIA_${safeDownloadStem(sourceFilename)}.pdf`
   );
 }
 

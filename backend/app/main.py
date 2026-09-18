@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from starlette.concurrency import run_in_threadpool
 
-from backend.app.auth import LoginRequest, RegisterRequest, authenticate_login, register_user, require_auth
+from backend.app.auth import LoginRequest, authenticate_login, require_auth, validate_auth_config
 from backend.app.core import (
     build_dashboard_payload,
     build_history_detail,
@@ -26,30 +26,30 @@ from backend.app.core import (
     find_history_entry,
     get_config,
     process_batch,
-    resolve_archived_source_blob,
     resolve_archived_source_path,
 )
 
 AuthUser = Annotated[dict[str, str], Depends(require_auth)]
 
 app = FastAPI(
-    title="DocuAI API",
+    title="DocIA API",
     version="2.0.0",
-    summary="Backend FastAPI pour la nouvelle interface DocuAI",
+    summary="API for validated intelligent document processing",
 )
 
+_startup_config = get_config()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-    ],
+    allow_origins=list(_startup_config.cors_origins),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+def validate_startup_configuration() -> None:
+    validate_auth_config(get_config())
 
 
 def _parse_date(raw: str | None) -> date | None:
@@ -69,11 +69,6 @@ def health() -> dict[str, str]:
 @app.post("/api/auth/login")
 def auth_login(payload: LoginRequest) -> dict:
     return authenticate_login(payload).model_dump()
-
-
-@app.post("/api/auth/register")
-def auth_register(payload: RegisterRequest) -> dict:
-    return register_user(payload).model_dump()
 
 
 @app.get("/api/auth/me")
@@ -178,7 +173,7 @@ def history_report(entry_key: str, _user: AuthUser) -> Response:
     pdf_bytes = build_report_for_entry(cfg, entry)
     stem = Path(str(entry.get("source_filename") or "document")).stem or "document"
     stem = stem.replace('"', "_").replace("\\", "_").replace("/", "_")
-    headers = {"Content-Disposition": f'attachment; filename="DOCEXTRACT_{stem}.pdf"'}
+    headers = {"Content-Disposition": f'attachment; filename="DocIA_Report_{stem}.pdf"'}
     return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
 
 
@@ -191,10 +186,6 @@ def history_source(entry_key: str, _user: AuthUser):
     payload = build_history_detail(cfg, entry).get("payload")
     source_path = resolve_archived_source_path(entry, cfg, payload if isinstance(payload, dict) else None)
     if source_path is None:
-        source_blob = resolve_archived_source_blob(cfg, entry)
-        if source_blob is not None:
-            content, media_type = source_blob
-            return Response(content=content, media_type=media_type)
         raise HTTPException(status_code=404, detail="Source archivee indisponible.")
     media_type, _ = mimetypes.guess_type(str(source_path))
     return FileResponse(path=source_path, media_type=media_type or "application/octet-stream")
@@ -219,16 +210,19 @@ async def extractions(
     _user: AuthUser,
     mode: Annotated[str, Form()] = "auto",
     method: Annotated[str, Form()] = "local",
-    geminiApiKey: Annotated[str | None, Form()] = None,
-    geminiModel: Annotated[str | None, Form()] = None,
-    ollamaHost: Annotated[str | None, Form()] = None,
-    localModel: Annotated[str | None, Form()] = None,
     retries: Annotated[int, Form()] = 5,
     retryDelay: Annotated[float, Form()] = 2.0,
     originsJson: Annotated[str | None, Form()] = None,
 ) -> dict:
     if not files:
         raise HTTPException(status_code=400, detail="Aucun fichier envoye.")
+
+    cfg = get_config()
+    if len(files) > cfg.max_batch_files:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Maximum {cfg.max_batch_files} fichiers par lot.",
+        )
 
     origins: list[str] = []
     if originsJson:
@@ -240,11 +234,27 @@ async def extractions(
             raise HTTPException(status_code=400, detail="originsJson invalide.") from exc
 
     payload_files: list[dict] = []
+    batch_size = 0
+    allowed_extensions = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".pdf"}
+    allowed_mime_types = {"application/pdf", "image/jpeg", "image/png", "image/tiff"}
     for index, upload in enumerate(files):
         file_bytes = await upload.read()
+        filename = upload.filename or f"document_{index + 1}"
+        extension = Path(filename).suffix.lower()
+        if extension not in allowed_extensions:
+            raise HTTPException(status_code=400, detail=f"Format non supporte: {filename}")
+        if upload.content_type and upload.content_type not in allowed_mime_types:
+            raise HTTPException(status_code=400, detail=f"Type MIME non supporte: {filename}")
+        if not file_bytes:
+            raise HTTPException(status_code=400, detail=f"Fichier vide: {filename}")
+        if len(file_bytes) > cfg.max_document_bytes:
+            raise HTTPException(status_code=413, detail=f"Fichier trop volumineux: {filename}")
+        batch_size += len(file_bytes)
+        if batch_size > cfg.max_batch_bytes:
+            raise HTTPException(status_code=413, detail="Taille totale du lot depassee.")
         payload_files.append(
             {
-                "name": upload.filename or f"document_{index + 1}",
+                "name": filename,
                 "bytes": file_bytes,
                 "origin": origins[index] if index < len(origins) else "upload",
             }
@@ -253,14 +263,14 @@ async def extractions(
     return await run_in_threadpool(
         partial(
             process_batch,
-            get_config(),
+            cfg,
             files=payload_files,
             mode=mode,
             extraction_method=method,
-            gemini_api_key=geminiApiKey,
-            gemini_model=geminiModel,
-            ollama_host=ollamaHost,
-            local_model=localModel,
+            gemini_api_key=cfg.gemini_api_key,
+            gemini_model=cfg.gemini_model,
+            ollama_host=cfg.ollama_host,
+            local_model=cfg.ollama_model,
             retries=retries,
             retry_delay=retryDelay,
         )

@@ -10,7 +10,6 @@ import tempfile
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
-from contextlib import contextmanager
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -29,7 +28,6 @@ from src.services.document_router import detect_document_type, process_any_docum
 from src.services.extraction_history import (
     delete_history_entry,
     list_history_entries,
-    load_source_blob,
     save_extraction,
 )
 from src.services.extraction_report_pdf import build_extraction_report_pdf
@@ -78,20 +76,6 @@ KIND_LABELS_FR = {
     "document_local": "Document (Docling + Qwen local)",
     "extraction_error": "Traitement a verifier",
 }
-
-
-@contextmanager
-def gemini_env(api_key: str | None):
-    old = os.environ.get("GEMINI_API_KEY")
-    if api_key:
-        os.environ["GEMINI_API_KEY"] = api_key
-    try:
-        yield
-    finally:
-        if old is None:
-            os.environ.pop("GEMINI_API_KEY", None)
-        else:
-            os.environ["GEMINI_API_KEY"] = old
 
 
 def get_config() -> AppConfig:
@@ -588,17 +572,13 @@ def resolve_archived_source_path(
     return None
 
 
-def resolve_archived_source_blob(cfg: AppConfig, entry: dict[str, Any]) -> tuple[bytes, str] | None:
-    return load_source_blob(cfg, entry)
-
-
 def build_history_detail(cfg: AppConfig, entry: dict[str, Any]) -> dict[str, Any]:
     payload = load_history_payload(entry)
     kind = str(entry.get("kind") or (payload.get("_meta") or {}).get("kind") or "")
     payload = _normalize_document_payload_fields_from_source(cfg, entry, kind, payload)
     summary = history_summary(entry, cfg)
     summary["payload"] = payload
-    summary["sourceAvailable"] = resolve_archived_source_path(entry, cfg, payload) is not None or bool(entry.get("has_source_blob"))
+    summary["sourceAvailable"] = resolve_archived_source_path(entry, cfg, payload) is not None
     return summary
 
 
@@ -625,6 +605,7 @@ def _try_process_document(
     mode: str,
     *,
     use_gemini: bool = False,
+    gemini_api_key: str | None = None,
     gemini_model: str | None = None,
 ) -> tuple[dict[str, Any] | None, str | None]:
     try:
@@ -632,7 +613,7 @@ def _try_process_document(
             tmp_path,
             mode=mode,
             use_gemini=use_gemini,
-            gemini_api_key=None,
+            gemini_api_key=gemini_api_key,
             gemini_model=gemini_model,
         )
         return routed, None
@@ -2507,10 +2488,11 @@ def process_single_document(
         elif is_receipt_mode and suffix == ".pdf":
             gemini_receipt_error = "Pour un ticket, importez une image (JPG, PNG ou TIFF), pas un PDF."
         elif is_receipt_mode:
-            with gemini_env(gkey):
+            if gkey:
                 try:
                     gemini_receipt_result = extract_receipt(
                         tmp_path,
+                        api_key=gkey,
                         model=gemini_model,
                         retries=int(retries),
                         retry_delay_sec=float(retry_delay),
@@ -2557,11 +2539,12 @@ def process_single_document(
             elif suffix == ".pdf":
                 processing_error = "Pour STEG avec Gemini, importez une image, pas un PDF."
             else:
-                with gemini_env(gkey):
+                if gkey:
                     routed, processing_error = _try_process_document(
                         tmp_path,
                         "steg",
                         use_gemini=True,
+                        gemini_api_key=gkey,
                         gemini_model=gemini_model,
                     )
                     if routed is not None:
@@ -2587,10 +2570,11 @@ def process_single_document(
                     reason="Gemini API non configuree; fallback OCR local applique.",
                 )
             else:
-                with gemini_env(gkey):
+                if gkey:
                     try:
                         gemini_supplier_result = extract_supplier_invoice(
                             tmp_path,
+                            gemini_api_key=gkey,
                             model=gemini_model,
                             retries=int(retries),
                             retry_delay_sec=float(retry_delay),
@@ -2643,11 +2627,12 @@ def process_single_document(
                 elif suffix == ".pdf":
                     processing_error = "Pour STEG avec Gemini, importez une image, pas un PDF."
                 else:
-                    with gemini_env(gkey):
+                    if gkey:
                         routed, processing_error = _try_process_document(
                             tmp_path,
                             "steg",
                             use_gemini=True,
+                            gemini_api_key=gkey,
                             gemini_model=gemini_model,
                         )
             elif doc_kind == "receipt":
@@ -2672,10 +2657,11 @@ def process_single_document(
                 elif suffix == ".pdf":
                     gemini_receipt_error = "Pour un ticket, importez une image, pas un PDF."
                 else:
-                    with gemini_env(gkey):
+                    if gkey:
                         try:
                             gemini_receipt_result = extract_receipt(
                                 tmp_path,
+                                api_key=gkey,
                                 model=gemini_model,
                                 retries=int(retries),
                                 retry_delay_sec=float(retry_delay),
@@ -2709,10 +2695,11 @@ def process_single_document(
                         reason="Document detecte comme facture fournisseur; Gemini non configure, fallback OCR local applique.",
                     )
                 else:
-                    with gemini_env(gkey):
+                    if gkey:
                         try:
                             gemini_supplier_result = extract_supplier_invoice(
                                 tmp_path,
+                                gemini_api_key=gkey,
                                 model=gemini_model,
                                 retries=int(retries),
                                 retry_delay_sec=float(retry_delay),
@@ -2748,10 +2735,11 @@ def process_single_document(
                     )
                 routed, processing_error = _try_process_document(tmp_path, "medical", use_gemini=False)
             else:
-                with gemini_env(gkey):
+                if gkey:
                     try:
                         gemini_generic_result = extract_medical_report(
                             tmp_path,
+                            api_key=gkey,
                             model=gemini_model,
                             retries=int(retries),
                             retry_delay_sec=float(retry_delay),
@@ -2791,10 +2779,11 @@ def process_single_document(
                     )
                 routed, processing_error = _try_process_document(tmp_path, "medical", use_gemini=False)
             else:
-                with gemini_env(gkey):
+                if gkey:
                     try:
                         gemini_generic_result = extract_medical_report(
                             tmp_path,
+                            api_key=gkey,
                             model=gemini_model,
                             retries=int(retries),
                             retry_delay_sec=float(retry_delay),
@@ -2921,18 +2910,6 @@ def process_single_document(
     )
 
 
-def _extraction_timeout_seconds() -> float:
-    raw = os.getenv("DOCUAI_EXTRACTION_TIMEOUT_SECONDS", "").strip()
-    if raw:
-        try:
-            value = float(raw)
-            if value >= 10:
-                return value
-        except ValueError:
-            pass
-    return DEFAULT_EXTRACTION_TIMEOUT_SECONDS
-
-
 def _timeout_message(mode: str, extraction_method: str, seconds: float) -> str:
     base = (
         f"Extraction arretee apres {int(seconds)} secondes pour eviter que l'interface reste bloquee."
@@ -2968,8 +2945,8 @@ def _process_single_document_with_timeout(
     filename = str(file_item["name"])
     file_bytes = bytes(file_item["bytes"])
     origin = str(file_item.get("origin") or "upload")
-    timeout_seconds = _extraction_timeout_seconds()
-    executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="docuai-extract")
+    timeout_seconds = cfg.extraction_timeout_seconds
+    executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="docia-extract")
     future = executor.submit(
         process_single_document,
         cfg,
@@ -3068,11 +3045,11 @@ def process_batch(
 
 
 def _default_ollama_host() -> str:
-    return (os.getenv("OLLAMA_HOST") or "http://127.0.0.1:11434").rstrip("/")
+    return get_config().ollama_host
 
 
 def _default_local_model() -> str:
-    return (os.getenv("OLLAMA_MODEL") or "qwen2.5:7b-instruct").strip()
+    return get_config().ollama_model
 
 
 def _docling_available() -> bool:
@@ -3100,7 +3077,7 @@ def build_meta_payload(cfg: AppConfig) -> dict[str, Any]:
     paddleocr_ready = _paddleocr_available()
     ollama_ready = _ollama_available(ollama_host)
     return {
-        "appName": "DocuAI",
+        "appName": "DocIA",
         "apiVersion": "v2",
         "themes": THEME_OPTIONS,
         "modes": MODE_OPTIONS,

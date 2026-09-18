@@ -48,7 +48,7 @@ $portLine = netstat -ano | Select-String "127\.0\.0\.1:3000\s+.*LISTENING"
 if ($portLine) {
     $pidText = (($portLine -split "\s+") | Select-Object -Last 1)
     Write-Host "Le port 3000 est deja utilise par le PID $pidText." -ForegroundColor Yellow
-    Write-Host "Si ce n'est pas le frontend DocuAI, arrete-le avec : taskkill /PID $pidText /F" -ForegroundColor Yellow
+    Write-Host "Si ce n'est pas le frontend DocIA, arrete-le avec : taskkill /PID $pidText /F" -ForegroundColor Yellow
     exit 1
 }
 

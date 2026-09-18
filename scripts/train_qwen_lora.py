@@ -46,7 +46,7 @@ def format_example(example: dict[str, Any], tokenizer: Any | None = None) -> str
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Fine-tuning LoRA Qwen2.5 pour DocuAI.")
+    parser = argparse.ArgumentParser(description="Fine-tuning LoRA Qwen2.5 pour DocIA.")
     parser.add_argument("--splits-root", type=Path, default=DEFAULT_SPLITS_ROOT)
     parser.add_argument("--model-name", default="Qwen/Qwen2.5-7B-Instruct")
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)

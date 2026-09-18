@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "DocuAI",
+  title: "DocIA",
   description: "Nouvelle interface Next.js + FastAPI pour l'extraction documentaire."
 };
 
