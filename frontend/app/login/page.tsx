@@ -12,9 +12,9 @@ import {
   ShieldCheck,
   UserRound
 } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
-import { loginApi } from "@/lib/api";
+import { fetchMeta, loginApi } from "@/lib/api";
 
 function authError(message: string) {
   try {
@@ -33,6 +33,16 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetchMeta()
+      .then((meta) => {
+        if (meta.auth?.enabled === false) {
+          router.replace("/dashboard");
+        }
+      })
+      .catch(() => undefined);
+  }, [router]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

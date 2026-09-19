@@ -106,7 +106,20 @@ def save_extraction(
             return [sanitize(item) for item in value]
         return value
 
-    doc = sanitize(dict(payload)) if status == "ok" else {}
+    if status == "ok":
+        doc = sanitize(dict(payload))
+    else:
+        # Keep only operational diagnostics; never retain OCR/source text on failures.
+        allowed_error_fields = {
+            "document_type",
+            "error",
+            "method",
+            "warnings",
+            "extraction_source",
+        }
+        doc = sanitize({key: value for key, value in payload.items() if key in allowed_error_fields})
+        if error_message and "error" not in doc:
+            doc["error"] = error_message
     doc.pop("_meta", None)
     guessed_mime, _ = mimetypes.guess_type(source_filename)
     source_mime = source_mime or guessed_mime or "application/octet-stream"

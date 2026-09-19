@@ -3,13 +3,14 @@ from __future__ import annotations
 import base64
 import importlib.util
 import json
+import multiprocessing
 import os
 import re
+import shutil
 import sys
 import tempfile
 import urllib.error
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -451,7 +452,7 @@ def history_summary(entry: dict[str, Any], cfg: AppConfig) -> dict[str, Any]:
         "savedAt": saved_at,
         "savedDate": entry_saved_date(entry).isoformat() if entry_saved_date(entry) else None,
         "sourceFilename": source_filename,
-        "status": status_from_payload(payload),
+        "status": str(entry.get("status") or status_from_payload(payload)),
         "warningsCount": warnings_count(payload),
         "qualityScore": quality_score(payload, kind),
         "sizeBytes": int(entry.get("size_bytes") or 0),
@@ -1551,41 +1552,6 @@ def _extract_receipt_number(text: str) -> str:
     return ""
 
 
-def _sroie_annotation_payload(cfg: AppConfig, filename: str) -> dict[str, Any] | None:
-    stem = Path(filename).stem
-    sroie_root = cfg.project_root / "Data" / "finetuning" / "raw" / "kaggle" / "receipt_sroie"
-    for split in ("test", "train"):
-        entity_path = sroie_root / split / "entities" / f"{stem}.txt"
-        box_path = sroie_root / split / "box" / f"{stem}.txt"
-        if not entity_path.exists() or not box_path.exists():
-            continue
-        try:
-            entity = json.loads(entity_path.read_text(encoding="utf-8-sig"))
-        except Exception:
-            return None
-        if not isinstance(entity, dict):
-            return None
-        raw_text = _sroie_box_to_text(box_path)
-        return {
-            "document_type": "receipt",
-            "store_name": str(entity.get("company") or "").strip(),
-            "date": str(entity.get("date") or "").strip(),
-            "time": "",
-            "ticket_number": _extract_receipt_number(raw_text),
-            "currency": "",
-            "items": [],
-            "total": str(entity.get("total") or "").strip(),
-            "payment_method": "",
-            "address": str(entity.get("address") or "").strip(),
-            "raw_text": raw_text,
-            "dataset": "sroie2019",
-            "dataset_split": split,
-            "extraction_source": "sroie_ground_truth",
-            "extraction_quality": 100.0,
-        }
-    return None
-
-
 MODE_DETECTED_KIND = {
     "medical": "medical_lab_report",
     "steg": "steg_invoice",
@@ -2211,13 +2177,14 @@ def process_single_document(
     local_model: str | None,
     retries: int,
     retry_delay: float,
+    temp_dir: str | None = None,
 ) -> dict[str, Any]:
     suffix = Path(filename).suffix.lower() or ".bin"
     use_local_ocr = extraction_method == "ocr"
     effective_mode = "auto" if origin != "upload" else mode
     detected_kind = MODE_DETECTED_KIND.get(effective_mode, "medical_lab_report")
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix, dir=temp_dir) as tmp:
         tmp.write(file_bytes)
         tmp_path = Path(tmp.name)
     detected_kind = _detect_kind_safely(
@@ -2237,34 +2204,6 @@ def process_single_document(
     gemini_supplier_error = None
 
     gkey = (gemini_api_key or "").strip() or cfg.gemini_api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-
-    if effective_mode in {"auto", "receipt"}:
-        test_payload = _sroie_annotation_payload(cfg, filename)
-        if test_payload is not None:
-            kind = "receipt_test"
-            detected_kind = "receipt"
-            history_relative: str | None = None
-            try:
-                history_path = save_extraction(
-                    cfg,
-                    kind,
-                    filename,
-                    test_payload,
-                    source_bytes=file_bytes,
-                    status="ok",
-                    detected_kind=detected_kind,
-                )
-                history_relative = str(history_path.relative_to(cfg.extraction_history_dir))
-            except Exception:
-                history_relative = None
-            return _successful_result(
-                kind=kind,
-                payload=test_payload,
-                history_relative=history_relative,
-                detected_kind=detected_kind,
-                source_origin=origin,
-                filename=filename,
-            )
 
     try:
         is_receipt_mode = effective_mode == "receipt"
@@ -2805,12 +2744,11 @@ def process_single_document(
         else:
             processing_error = f"Mode non pris en charge : {effective_mode!r}"
     finally:
-        try:
+        if detected_kind != "steg_invoice":
             tmp_path.unlink(missing_ok=True)
-        except OSError:
-            pass
 
     if gemini_receipt_error:
+        tmp_path.unlink(missing_ok=True)
         return _persisted_error_result(
             cfg,
             filename=filename,
@@ -2822,6 +2760,7 @@ def process_single_document(
             extraction_method=extraction_method,
         )
     if gemini_supplier_error:
+        tmp_path.unlink(missing_ok=True)
         return _persisted_error_result(
             cfg,
             filename=filename,
@@ -2833,6 +2772,7 @@ def process_single_document(
             extraction_method=extraction_method,
         )
     if gemini_generic_error:
+        tmp_path.unlink(missing_ok=True)
         return _persisted_error_result(
             cfg,
             filename=filename,
@@ -2844,6 +2784,7 @@ def process_single_document(
             extraction_method=extraction_method,
         )
     if processing_error:
+        tmp_path.unlink(missing_ok=True)
         return _persisted_error_result(
             cfg,
             filename=filename,
@@ -2875,6 +2816,7 @@ def process_single_document(
         payload = routed["result"].model_dump()
         kind = "medical_ocr"
     else:
+        tmp_path.unlink(missing_ok=True)
         return _persisted_error_result(
             cfg,
             filename=filename,
@@ -2888,7 +2830,12 @@ def process_single_document(
 
     payload = _normalize_document_payload_fields(kind, payload)
     if kind in {"steg_ocr", "steg_gemini", "steg_local"}:
-        payload = _normalize_steg_payload_fields_from_image_path(payload, tmp_path)
+        try:
+            payload = _normalize_steg_payload_fields_from_image_path(payload, tmp_path)
+        finally:
+            tmp_path.unlink(missing_ok=True)
+    else:
+        tmp_path.unlink(missing_ok=True)
     try:
         history_path = save_extraction(
             cfg,
@@ -2932,6 +2879,45 @@ def _timeout_message(mode: str, extraction_method: str, seconds: float) -> str:
     return base
 
 
+def _extraction_process_target(connection: Any, cfg: AppConfig, kwargs: dict[str, Any]) -> None:
+    """Run one extraction in an isolated process so a timeout can terminate it safely."""
+    try:
+        connection.send(("ok", process_single_document(cfg, **kwargs)))
+    except BaseException as exc:
+        connection.send(("error", f"{type(exc).__name__}: {exc}"))
+    finally:
+        connection.close()
+
+
+def _run_process_with_timeout(
+    target: Any,
+    args: tuple[Any, ...],
+    timeout_seconds: float,
+) -> tuple[str, Any]:
+    """Execute a picklable worker and guarantee it is gone before returning."""
+    context = multiprocessing.get_context("spawn")
+    parent_connection, child_connection = context.Pipe(duplex=False)
+    process = context.Process(target=target, args=(child_connection, *args), daemon=False)
+    process.start()
+    child_connection.close()
+    if not parent_connection.poll(timeout_seconds):
+        process.terminate()
+        process.join(5)
+        if process.is_alive():
+            process.kill()
+            process.join(5)
+        parent_connection.close()
+        return "timeout", None
+    try:
+        outcome = parent_connection.recv()
+    except EOFError:
+        outcome = ("error", f"Extraction worker exited with code {process.exitcode}.")
+    finally:
+        parent_connection.close()
+        process.join(5)
+    return outcome
+
+
 def _process_single_document_with_timeout(
     cfg: AppConfig,
     *,
@@ -2949,29 +2935,32 @@ def _process_single_document_with_timeout(
     file_bytes = bytes(file_item["bytes"])
     origin = str(file_item.get("origin") or "upload")
     timeout_seconds = cfg.extraction_timeout_seconds
-    executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="docia-extract")
-    future = executor.submit(
-        process_single_document,
-        cfg,
-        filename=filename,
-        file_bytes=file_bytes,
-        origin=origin,
-        mode=mode,
-        extraction_method=extraction_method,
-        gemini_api_key=gemini_api_key,
-        gemini_model=gemini_model or cfg.gemini_model,
-        ollama_host=ollama_host,
-        local_model=local_model,
-        retries=retries,
-        retry_delay=retry_delay,
-    )
+    worker_temp_dir = tempfile.mkdtemp(prefix="docia-extract-")
+    kwargs = {
+        "filename": filename,
+        "file_bytes": file_bytes,
+        "origin": origin,
+        "mode": mode,
+        "extraction_method": extraction_method,
+        "gemini_api_key": gemini_api_key,
+        "gemini_model": gemini_model or cfg.gemini_model,
+        "ollama_host": ollama_host,
+        "local_model": local_model,
+        "retries": retries,
+        "retry_delay": retry_delay,
+        "temp_dir": worker_temp_dir,
+    }
     try:
-        result = future.result(timeout=timeout_seconds)
-        executor.shutdown(wait=False, cancel_futures=True)
-        return result
-    except TimeoutError:
-        future.cancel()
-        executor.shutdown(wait=False, cancel_futures=True)
+        outcome, value = _run_process_with_timeout(
+            _extraction_process_target,
+            (cfg, kwargs),
+            timeout_seconds,
+        )
+    finally:
+        shutil.rmtree(worker_temp_dir, ignore_errors=True)
+    if outcome == "ok":
+        return value
+    if outcome == "timeout":
         effective_mode = "auto" if origin != "upload" else mode
         return _persisted_error_result(
             cfg,
@@ -2983,19 +2972,17 @@ def _process_single_document_with_timeout(
             mode=effective_mode,
             extraction_method=extraction_method,
         )
-    except Exception as exc:
-        executor.shutdown(wait=False, cancel_futures=True)
-        effective_mode = "auto" if origin != "upload" else mode
-        return _persisted_error_result(
-            cfg,
-            filename=filename,
-            file_bytes=file_bytes,
-            source_origin=origin,
-            detected_kind=MODE_DETECTED_KIND.get(effective_mode, "medical_lab_report"),
-            error=f"{type(exc).__name__}: {exc}",
-            mode=effective_mode,
-            extraction_method=extraction_method,
-        )
+    effective_mode = "auto" if origin != "upload" else mode
+    return _persisted_error_result(
+        cfg,
+        filename=filename,
+        file_bytes=file_bytes,
+        source_origin=origin,
+        detected_kind=MODE_DETECTED_KIND.get(effective_mode, "medical_lab_report"),
+        error=str(value),
+        mode=effective_mode,
+        extraction_method=extraction_method,
+    )
 
 
 def process_batch(
@@ -3063,6 +3050,12 @@ def _paddleocr_available() -> bool:
     return importlib.util.find_spec("paddleocr") is not None
 
 
+def _tesseract_available(configured_path: str | None) -> bool:
+    if configured_path and Path(configured_path).is_file():
+        return True
+    return shutil.which("tesseract") is not None
+
+
 def _ollama_available(host: str | None = None) -> bool:
     target = (host or _default_ollama_host()).rstrip("/")
     request = urllib.request.Request(f"{target}/api/tags", method="GET")
@@ -3074,44 +3067,22 @@ def _ollama_available(host: str | None = None) -> bool:
 
 
 def build_meta_payload(cfg: AppConfig) -> dict[str, Any]:
-    ollama_host = _default_ollama_host()
-    local_model = _default_local_model()
     docling_ready = _docling_available()
     paddleocr_ready = _paddleocr_available()
-    ollama_ready = _ollama_available(ollama_host)
+    ollama_ready = _ollama_available(cfg.ollama_host)
     return {
         "appName": "DocIA",
         "apiVersion": "v2",
         "themes": THEME_OPTIONS,
         "modes": MODE_OPTIONS,
         "methods": METHOD_OPTIONS,
-        "defaultGeminiModel": cfg.gemini_model,
-        "defaultLocalModel": local_model,
-        "defaultOllamaHost": ollama_host,
         "localPipeline": {
             "doclingAvailable": docling_ready,
             "paddleocrAvailable": paddleocr_ready,
             "ollamaAvailable": ollama_ready,
             "available": docling_ready and paddleocr_ready and ollama_ready,
-            "model": local_model,
-            "host": ollama_host,
-            "architecture": [
-                "Document PDF/image",
-                "Pretraitement et validation fichier",
-                "Docling vers Markdown structure",
-                "Controle qualite Markdown",
-                "Fallback PaddleOCR si Markdown faible",
-                "Qwen2.5 local via Ollama vers JSON",
-                "Validation metier",
-            ],
         },
         "geminiConfigured": bool(cfg.gemini_api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")),
-        "geminiEnvKey": "GEMINI_API_KEY",
-        "geminiInstructions": {
-            "session": "Collez votre cle dans l'interface pour cette session navigateur.",
-            "server": "Pour un usage permanent, ajoutez GEMINI_API_KEY=... dans le fichier .env a la racine du projet backend.",
-            "pathHint": str((cfg.project_root / ".env").resolve()),
-        },
         "auth": {
             "enabled": cfg.auth_enabled,
             "loginUrl": "/api/auth/login",
@@ -3329,7 +3300,7 @@ def build_models_payload(cfg: AppConfig) -> dict[str, Any]:
 
     tesseract_path = cfg.tesseract_cmd or ""
     gemini_available = bool(cfg.gemini_api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
-    ocr_available = bool(tesseract_path)
+    ocr_available = _tesseract_available(tesseract_path)
     ollama_host = _default_ollama_host()
     local_model = _default_local_model()
     docling_available = _docling_available()

@@ -61,6 +61,24 @@ def _parse_date(raw: str | None) -> date | None:
         raise HTTPException(status_code=400, detail=f"Date invalide: {raw}") from exc
 
 
+async def _read_upload_limited(
+    upload: UploadFile,
+    *,
+    filename: str,
+    max_document_bytes: int,
+    batch_size: int,
+    max_batch_bytes: int,
+) -> tuple[bytes, int]:
+    buffer = bytearray()
+    while chunk := await upload.read(64 * 1024):
+        buffer.extend(chunk)
+        if len(buffer) > max_document_bytes:
+            raise HTTPException(status_code=413, detail=f"Fichier trop volumineux: {filename}")
+        if batch_size + len(buffer) > max_batch_bytes:
+            raise HTTPException(status_code=413, detail="Taille totale du lot depassee.")
+    return bytes(buffer), batch_size + len(buffer)
+
+
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -210,8 +228,8 @@ async def extractions(
     _user: AuthUser,
     mode: Annotated[str, Form()] = "auto",
     method: Annotated[str, Form()] = "local",
-    retries: Annotated[int, Form()] = 5,
-    retryDelay: Annotated[float, Form()] = 2.0,
+    retries: Annotated[int, Form(ge=0, le=5)] = 5,
+    retryDelay: Annotated[float, Form(ge=0, le=10)] = 2.0,
     originsJson: Annotated[str | None, Form()] = None,
 ) -> dict:
     if not files:
@@ -238,20 +256,21 @@ async def extractions(
     allowed_extensions = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".pdf"}
     allowed_mime_types = {"application/pdf", "image/jpeg", "image/png", "image/tiff"}
     for index, upload in enumerate(files):
-        file_bytes = await upload.read()
         filename = upload.filename or f"document_{index + 1}"
         extension = Path(filename).suffix.lower()
         if extension not in allowed_extensions:
             raise HTTPException(status_code=400, detail=f"Format non supporte: {filename}")
         if upload.content_type and upload.content_type not in allowed_mime_types:
             raise HTTPException(status_code=400, detail=f"Type MIME non supporte: {filename}")
+        file_bytes, batch_size = await _read_upload_limited(
+            upload,
+            filename=filename,
+            max_document_bytes=cfg.max_document_bytes,
+            batch_size=batch_size,
+            max_batch_bytes=cfg.max_batch_bytes,
+        )
         if not file_bytes:
             raise HTTPException(status_code=400, detail=f"Fichier vide: {filename}")
-        if len(file_bytes) > cfg.max_document_bytes:
-            raise HTTPException(status_code=413, detail=f"Fichier trop volumineux: {filename}")
-        batch_size += len(file_bytes)
-        if batch_size > cfg.max_batch_bytes:
-            raise HTTPException(status_code=413, detail="Taille totale du lot depassee.")
         payload_files.append(
             {
                 "name": filename,
