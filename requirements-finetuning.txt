@@ -1,0 +1,7 @@
+accelerate
+datasets
+kaggle
+peft
+pillow
+torch
+transformers
